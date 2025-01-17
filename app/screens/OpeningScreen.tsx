@@ -2,9 +2,8 @@ import React, { useState} from 'react';
 import { StyleSheet, View, Button, Image, TextInput } from 'react-native';
 
 import colors from "../config/colors";
-import HomeScreen from './HomeScreen';
 
-function OpeningScreen(props) {
+const OpeningScreen = ({navigation}) => {
     const [showLogin, setShowLogin] = useState(false);
     const [showSignUp, setShowSignUp] = useState(false);
 
@@ -20,10 +19,6 @@ function OpeningScreen(props) {
         if (showLogin == true) {
             setShowLogin(false)
         }
-    }
-
-    const navigateHome = () => {
-        <HomeScreen />
     }
 
     return (
@@ -57,11 +52,11 @@ function OpeningScreen(props) {
                 )}
             </View>
             <View>
-                <Button title="Confirm" onPress={navigateHome} />
+                <Button title="Confirm" onPress={() => navigation.navigate('Home')} />
             </View>
         </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
     background: {

@@ -12,15 +12,17 @@ import HomeScreen from "./screens/HomeScreen";
 //creating stack navigator
 const Stack = createNativeStackNavigator();
 
-export default function Index() {
+const Index = () => {
     return (
         /* Stack consists of the stack of screens in project.
         Project opens on the Welcome / Opening screen and will be
         navigated to other  screens via Stack. */
         <Stack.Navigator>
-            <Stack.Screen name="Welcome" component={OpeningScreen} />
-            <Stack.Screen name="Home" component={HomeScreen } />
-            <Stack.Screen name="Shop" component={ShopScreen} />
+            <Stack.Screen name="Welcome" component={OpeningScreen} options={{headerShown: false}} />
+            <Stack.Screen name="Home" component={HomeScreen } options={{headerShown: false}} />
+            <Stack.Screen name="Shop" component={ShopScreen} options={{headerShown: false}} />
         </Stack.Navigator>
-  );
-}
+    );
+};
+
+export default Index;
