@@ -1,11 +1,18 @@
 import React, { useState} from 'react';
 import { StyleSheet, View, Button, Image, TextInput } from 'react-native';
+// RUN npx expo install firebase
+import { FIREBASE_AUTH } from '../../firebaseConfig'
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 import colors from "../config/colors";
 
 const OpeningScreen = ({navigation}) => {
     const [showLogin, setShowLogin] = useState(false);
     const [showSignUp, setShowSignUp] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const auth = FIREBASE_AUTH;
 
     const toggleLogin = () => {
         setShowLogin(!showLogin);
@@ -21,6 +28,28 @@ const OpeningScreen = ({navigation}) => {
         }
     }
 
+    const signIn = async () => {
+        try {
+            const response = await signInWithEmailAndPassword(auth, email, password);
+            console.log(response);
+            alert('sign in is probably successful')
+        } catch (error) {
+            console.log(error);
+            alert('sign in failed: ' + error.message)
+        }
+    }
+
+    const signUp = async () => {
+        try {
+            const response = await createUserWithEmailAndPassword(auth, email, password);
+            console.log(response);
+            alert('sign up is probably successful')
+        } catch (error) {
+            console.log(error);
+            alert('sign up failed: ' + error.message)
+        }
+    }
+
     return (
         <View style={styles.background}>
             <Image style={styles.logo} source={require("../assets/images/react-logo.png")} />
@@ -29,34 +58,38 @@ const OpeningScreen = ({navigation}) => {
                 {showSignUp && (
                     <View style={styles.textFields} >
                         <TextInput
-                            placeholder="Create Username"
+                            value={email}
+                            placeholder="Enter Email"
+                            autoCapitalize="none"
+                            onChangeText={(text) => setEmail(text)}
                         />
                         <TextInput 
-                            placeholder="Create Password"
+                            secureTextEntry={true}
+                            value={password}
+                            placeholder="Enter Password"
+                            autoCapitalize="none"
+                            onChangeText={(text) => setPassword(text)}
                         />
-                        <TextInput 
-                            placeholder="Re-enter Password"
-                        />
+                        <Button title="Confirm Sign Up" onPress={signUp} />
                     </View>
                 )}
                 <Button color="#4ecd24" title="Login" onPress={toggleLogin}/>
                 {showLogin && (
                     <View style={styles.textFields} >
                         <TextInput
-                        placeholder="Enter Username"
+                        placeholder="Enter Email"
                         />
                         <TextInput 
                         placeholder="Enter Password"
                         />
+                    <Button title="Confirm Sign In" onPress={signIn} />
                     </View>
                 )}
-            </View>
-            <View>
-                <Button title="Confirm" onPress={() => navigation.navigate('Home')} />
+            <Button title="Home" onPress={() => navigation.navigate('Home')} />
             </View>
         </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
     background: {
