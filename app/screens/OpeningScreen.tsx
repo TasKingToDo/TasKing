@@ -1,5 +1,6 @@
 import React, { useState} from 'react';
 import { StyleSheet, View, Button, Image, TextInput } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 // RUN npx expo install firebase
 import { FIREBASE_AUTH } from '../../firebaseConfig'
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -51,43 +52,47 @@ const OpeningScreen = ({navigation}) => {
     }
 
     return (
-        <View style={styles.background}>
-            <Image style={styles.logo} source={require("../assets/images/react-logo.png")} />
-            <View style={styles.buttons}>
-                <Button color="#fc5c65" title="Signup" onPress={toggleSignup}/>
-                {showSignUp && (
-                    <View style={styles.textFields} >
-                        <TextInput
-                            value={email}
-                            placeholder="Enter Email"
-                            autoCapitalize="none"
-                            onChangeText={(text) => setEmail(text)}
-                        />
-                        <TextInput 
-                            secureTextEntry={true}
-                            value={password}
-                            placeholder="Enter Password"
-                            autoCapitalize="none"
-                            onChangeText={(text) => setPassword(text)}
-                        />
-                        <Button title="Confirm Sign Up" onPress={signUp} />
+        <SafeAreaProvider style={styles.background}>
+            <SafeAreaView>
+                <View style={styles.background}>
+                    <Image style={styles.logo} source={require("../assets/images/react-logo.png")} />
+                    <View style={styles.buttons}>
+                        <Button color="#fc5c65" title="Signup" onPress={toggleSignup}/>
+                        {showSignUp && (
+                            <View style={styles.textFields} >
+                                <TextInput
+                                    value={email}
+                                    placeholder="Enter Email"
+                                    autoCapitalize="none"
+                                    onChangeText={(text) => setEmail(text)}
+                                />
+                                <TextInput 
+                                    secureTextEntry={true}
+                                    value={password}
+                                    placeholder="Enter Password"
+                                    autoCapitalize="none"
+                                    onChangeText={(text) => setPassword(text)}
+                                />
+                                <Button title="Confirm Sign Up" onPress={signUp} />
+                            </View>
+                        )}
+                        <Button color="#4ecd24" title="Login" onPress={toggleLogin}/>
+                        {showLogin && (
+                            <View style={styles.textFields} >
+                                <TextInput
+                                placeholder="Enter Email"
+                                />
+                                <TextInput 
+                                placeholder="Enter Password"
+                                />
+                            <Button title="Confirm Sign In" onPress={signIn} />
+                            </View>
+                        )}
+                    <Button title="Home" onPress={() => navigation.navigate('Home')} />
                     </View>
-                )}
-                <Button color="#4ecd24" title="Login" onPress={toggleLogin}/>
-                {showLogin && (
-                    <View style={styles.textFields} >
-                        <TextInput
-                        placeholder="Enter Email"
-                        />
-                        <TextInput 
-                        placeholder="Enter Password"
-                        />
-                    <Button title="Confirm Sign In" onPress={signIn} />
-                    </View>
-                )}
-            <Button title="Home" onPress={() => navigation.navigate('Home')} />
-            </View>
-        </View>
+                </View>
+            </SafeAreaView>
+        </SafeAreaProvider>
     );
 }
 

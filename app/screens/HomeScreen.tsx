@@ -1,5 +1,7 @@
 import React from 'react';
-import { Text, View, StyleSheet, Pressable} from 'react-native';
+import { Text, View, StyleSheet, Pressable } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+
 
 import colors from "../config/colors";
 import TaskScreen from './TaskScreen';
@@ -7,19 +9,23 @@ import ShopScreen from './ShopScreen';
 
 const HomeScreen = () => {
     return (
-        <View style={styles.background}>
-            <View style={styles.topHalf}>
-                <ShopScreen />
-            </View>
-            <View style={styles.bottomHalf}>
-                <TaskScreen />
-            </View>
-            <View style={styles.navbar}>
-                <Pressable style={styles.menu}></Pressable>
-                <View style={styles.levelBar}></View>
-                <Pressable style={styles.createTask}></Pressable>
-            </View>
-        </View>
+        <SafeAreaProvider style={styles.background}>
+            <SafeAreaView>
+                <View style={styles.background}>
+                    <View style={styles.topHalf}>
+                        <ShopScreen />
+                    </View>
+                    <View style={styles.bottomHalf}>
+                        <TaskScreen />
+                    </View>
+                    <View style={styles.navbar}>
+                        <Pressable style={styles.menu}></Pressable>
+                        <View style={styles.levelBar}></View>
+                        <Pressable style={styles.createTask}></Pressable>
+                    </View>
+                </View>
+            </SafeAreaView>
+        </SafeAreaProvider>
     );
 };
 
