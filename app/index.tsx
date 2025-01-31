@@ -20,7 +20,7 @@ const Index = () => {
         navigated to other  screens via Stack. */
         <Stack.Navigator>
             <Stack.Screen name="Welcome" component={OpeningScreen} options={{headerShown: false}} />
-            <Stack.Screen name="Home" component={HomeScreen} options={{headerShown: false}} />
+            <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Shop" component={ShopScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Tasks" component={TaskScreen} options={{headerShown: false}} />
         </Stack.Navigator>
