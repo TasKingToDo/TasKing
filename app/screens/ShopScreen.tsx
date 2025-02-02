@@ -13,6 +13,7 @@ import shirtData from "../assets/shopdata/shirtData";
 import pantsData from "../assets/shopdata/pantsData";
 import hatData from "../assets/shopdata/hatData";
 import shoesData from "../assets/shopdata/shoesData";
+import accData from "../assets/shopdata/accData";
 
 //num of cols on bottom half of screen
 const numColumns = 3;
@@ -132,6 +133,28 @@ const ShoesRoute = () => {
   );
 }
 
+//Accessorites shop menu
+const AccRoute = () => {
+  return (
+    <View>
+      <FlatList
+        style={styles.flatListContainer}
+        numColumns={numColumns}
+        data={accData}
+        renderItem={({ item }) => (
+          <View style={styles.flatListContainer}>
+            <Pressable style={({ pressed }) => [{
+              backgroundColor: pressed ? pressColor : unpressColor,
+            }]}>
+              <Image source={{ uri: item.imageUrl }} style={styles.thumbnails} />
+            </Pressable>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+
 //Shop tabs instantiation
 const Tab = createMaterialTopTabNavigator({
   screens: {
@@ -140,6 +163,7 @@ const Tab = createMaterialTopTabNavigator({
     Pants: PantsRoute,
     Hats: HatRoute,
     Shoes: ShoesRoute,
+    Accessories: AccRoute,
   },
 });
 
@@ -167,6 +191,7 @@ const ShopScreen = () => {
                 <Tab.Screen name="👖" component={PantsRoute} />
                 <Tab.Screen name="👑" component={HatRoute} />
                 <Tab.Screen name="👟" component={ShoesRoute} />
+                <Tab.Screen name="🌹" component={AccRoute} />
                 
               </Tab.Navigator>
             </NavigationContainer>
