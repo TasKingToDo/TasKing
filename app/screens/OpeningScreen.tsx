@@ -1,19 +1,18 @@
 import React, { useState} from 'react';
-import { StyleSheet, View, Button, Image, TextInput } from 'react-native';
+import { StyleSheet, View, Button, Image, TextInput, Pressable, Text } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 // RUN npx expo install firebase
-import { FIREBASE_AUTH } from '../../firebaseConfig'
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { FIREBASE_APP } from '../../firebaseConfig'
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth} from 'firebase/auth';
 
 import colors from "../config/colors";
 
 const OpeningScreen = ({navigation}) => {
-    const [showLogin, setShowLogin] = useState(false);
+    const [showLogin, setShowLogin] = useState(true);
     const [showSignUp, setShowSignUp] = useState(false);
-    const [email, setEmail] = useState('');
+    var [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const auth = FIREBASE_AUTH;
+    const auth = getAuth(FIREBASE_APP);
 
     const toggleLogin = () => {
         setShowLogin(!showLogin);
@@ -33,7 +32,8 @@ const OpeningScreen = ({navigation}) => {
         try {
             const response = await signInWithEmailAndPassword(auth, email, password);
             console.log(response);
-            alert('sign in is probably successful')
+            alert('Sign in was successful')
+            navigation.navigate('Home')
         } catch (error) {
             console.log(error);
             alert('sign in failed: ' + error.message)
@@ -45,6 +45,8 @@ const OpeningScreen = ({navigation}) => {
             const response = await createUserWithEmailAndPassword(auth, email, password);
             console.log(response);
             alert('sign up is probably successful')
+            setShowLogin(false)
+            setShowSignUp(false)
         } catch (error) {
             console.log(error);
             alert('sign up failed: ' + error.message)
@@ -57,7 +59,7 @@ const OpeningScreen = ({navigation}) => {
                 <View style={styles.background}>
                     <Image style={styles.logo} source={require("../assets/images/react-logo.png")} />
                     <View style={styles.buttons}>
-                        <Button color="#fc5c65" title="Signup" onPress={toggleSignup}/>
+                        <Button color={colors.grey} title="Signup" onPress={toggleSignup}/>
                         {showSignUp && (
                             <View style={styles.textFields} >
                                 <TextInput
@@ -73,10 +75,11 @@ const OpeningScreen = ({navigation}) => {
                                     autoCapitalize="none"
                                     onChangeText={(text) => setPassword(text)}
                                 />
-                                <Button title="Confirm Sign Up" onPress={signUp} />
+                                <Button color={colors.accept} title="Confirm Sign Up" onPress={signUp} />
                             </View>
                         )}
-                        <Button color="#4ecd24" title="Login" onPress={toggleLogin}/>
+                        <View style={{width: 15}}/>
+                        <Button color={colors.primary} title="Login" onPress={toggleLogin}/>
                         {showLogin && (
                             <View style={styles.textFields} >
                                 <TextInput
@@ -84,12 +87,15 @@ const OpeningScreen = ({navigation}) => {
                                 />
                                 <TextInput 
                                 placeholder="Enter Password"
+                                secureTextEntry={true}
                                 />
-                            <Button title="Confirm Sign In" onPress={signIn} />
+                            <Button color={colors.accept} title="Confirm Login" onPress={signIn} />
                             </View>
                         )}
-                    <Button title="Home" onPress={() => navigation.navigate('Home')} />
                     </View>
+                    <Pressable>
+                        <Text style={styles.forgotPassword}>Forgot Password? Click Here to Change it.</Text>
+                    </Pressable>
                 </View>
             </SafeAreaView>
         </SafeAreaProvider>
@@ -108,17 +114,22 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "center",
     },
+    forgotPassword: {
+        color: "blue",
+        textDecorationLine: "underline"
+    },
     logo: {
         width: 100,
         height: 100,
         position: "absolute",
         top: 10,
     },
+    signUpButton: {
+        backgroundColor: 'rgba(52,52,52,0.8)'
+    },
     textFields: {
         position: "absolute",
         bottom: 70,
-        borderStyle: "solid",
-        borderColor: colors.black,
     },
 })
 
