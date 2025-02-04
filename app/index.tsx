@@ -9,6 +9,10 @@ import OpeningScreen from "./screens/OpeningScreen";
 import ShopScreen from "./screens/ShopScreen";
 import HomeScreen from "./screens/HomeScreen";
 import TaskScreen from "./screens/TaskScreen";
+import FriendsScreen from "./screens/FriendsScreen";
+import SettingsScreen from "./screens/SettingsScreen";
+import StatisticsScreen from "./screens/StatisticsScreen";
+import CreateTaskScreen from "./screens/StatisticsScreen";
 
 //creating stack navigator
 const Stack = createNativeStackNavigator();
@@ -23,6 +27,10 @@ const Index = () => {
             <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Shop" component={ShopScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Tasks" component={TaskScreen} options={{headerShown: false}} />
+            <Stack.Screen name="Create Task" component={CreateTaskScreen} options={{headerShown: false}} />
+            <Stack.Screen name="Friends" component={FriendsScreen} options={{headerShown: false}} />
+            <Stack.Screen name="Stats" component={StatisticsScreen} options={{headerShown: false}} />
+            <Stack.Screen name="Settings" component={SettingsScreen} options={{headerShown: false}} />
         </Stack.Navigator>
     );
 };
