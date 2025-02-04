@@ -1,13 +1,15 @@
 import React from 'react';
-import { Text, View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable} from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { Feather } from "@expo/vector-icons";
 
 
 import colors from "../config/colors";
 import TaskScreen from './TaskScreen';
 import ShopScreen from './ShopScreen';
+import CustomMenu from '../config/customMenu';
 
-const HomeScreen = () => {
+const HomeScreen = ({navigation}) => {
     return (
         <SafeAreaProvider style={styles.background}>
             <SafeAreaView>
@@ -19,9 +21,11 @@ const HomeScreen = () => {
                         <TaskScreen />
                     </View>
                     <View style={styles.navbar}>
-                        <Pressable style={styles.menu}></Pressable>
+                        <CustomMenu />
                         <View style={styles.levelBar}></View>
-                        <Pressable style={styles.createTask}></Pressable>
+                        <Pressable style={styles.createTask} onPress={() => navigation.navigate('Create Task')}>
+                            <Feather name="plus-circle" size={70}/>
+                        </Pressable>
                     </View>
                 </View>
             </SafeAreaView>
@@ -38,24 +42,20 @@ const styles = StyleSheet.create({
     bottomHalf: {
         alignItems: "center",
         width: "100%",
-        height: "45.5%",
+        height: "45%",
         borderTopWidth: 2,
+        backgroundColor: colors.white,
     },
     createTask: {
         width: "17.5%",
-        height: 80,
-        backgroundColor: colors.primary,
+        height: 75,
+        backgroundColor: colors.white,
         justifyContent: "center",
         alignItems: "center",
     },
-    menu: {
-        width: "17.5%",
-        height: 80,
-        backgroundColor: colors.primary,
-    },
     levelBar: {
         width: "65%",
-        height: 80,
+        height: 75,
         backgroundColor: colors.secondary,
     },
     navbar: {
@@ -64,6 +64,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderTopWidth: 3,
         borderTopColor: colors.black,
+        backgroundColor: colors.white,
     },
     topHalf: {
         alignItems: "center",
