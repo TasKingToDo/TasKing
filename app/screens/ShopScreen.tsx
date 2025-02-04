@@ -1,13 +1,13 @@
 ﻿import React, { useState } from 'react';
 import {
   View, ScrollView, Image, Text, TextInput,
-  Dimensions, StyleSheet, FlatList, TouchableOpacity,
-  Pressable
+  Dimensions, StyleSheet, FlatList, TouchableOpacity, Pressable
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 //npm install react-native-tab-view
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
+
 import bodyData from "../assets/shopdata/bodyData";
 import shirtData from "../assets/shopdata/shirtData";
 import pantsData from "../assets/shopdata/pantsData";
@@ -167,14 +167,30 @@ const Tab = createMaterialTopTabNavigator({
   },
 });
 
+//images layered in 
+const layers = [
+  ,
+  '../assets/imgs/8bit/body3.png',
+  '../assets/imgs/8bit/pants3.png',
+  '../assets/imgs/8bit/shirt3.png',
+  '../assets/imgs/8bit/shoes3.png',
+  '../assets/imgs/8bit/hat3.png',
+  '../assets/imgs/8bit/acc3.png',
+];
+
 //Main - container display
 const ShopScreen = () => {
   return (
     <SafeAreaProvider style={styles.background}>
       <SafeAreaView>
         {/* Top half of screen (display of the character) */}
-        <View style={styles.background}>
-          <Text>Shop Screen top</Text>
+        <View style={styles.imageContainer}>
+          <Image source={require('../assets/imgs/background/bg_evening.png')} style={styles.bgImage} />
+          <Image source={require('../assets/imgs/8bit/body3.png')} style={styles.image} />
+          <Image source={require('../assets/imgs/8bit/pants2.png')} style={styles.image} />
+          <Image source={require('../assets/imgs/8bit/shirt5.png')} style={styles.image} />
+          <Image source={require('../assets/imgs/8bit/shoes4.png')} style={styles.image} />
+          <Image source={require('../assets/imgs/8bit/acc3.png')} style={styles.image} />
         </View>
         {/* Bottom half of screen (shop portion) */}
         <View style={styles.background}>
@@ -222,10 +238,27 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     borderRadius: 10,
   },
+  imageContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   thumbnails: {
     width: 128,
     height: 128,
     resizeMode: 'contain',
+  },
+  bgImage: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height / 2,
+    resizeMode: 'cover',
+
+  },
+  image: {
+    width: Dimensions.get('window').width * (2/3),
+    height: Dimensions.get('window').height * (1/3),
+    objectFit: 'fill',
+    position: 'absolute',
+
   },
 })
 
