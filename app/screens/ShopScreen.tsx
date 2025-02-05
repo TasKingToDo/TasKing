@@ -1,4 +1,4 @@
-﻿import React, { useState, useContext } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View, ScrollView, Image, Text, TextInput,
   Dimensions, StyleSheet, FlatList, TouchableOpacity, Pressable
@@ -7,7 +7,6 @@ import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 //npm install react-native-tab-view
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
-import { SettingsContext } from '../SettingsContext';
 
 import bodyData from "../assets/shopdata/bodyData";
 import shirtData from "../assets/shopdata/shirtData";
@@ -26,7 +25,6 @@ const pressColor = '#aec7c8';
 //need to optimize with states instead of multiple screen instances
 //Body shop menu
 const BodyRoute = () => {
-  const settings = useContext(SettingsContext);
   return (
     <View>
       <FlatList
