@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, Pressable} from 'react-native';
+import { View, StyleSheet, Pressable, Text } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { Feather } from "@expo/vector-icons";
+import { Entypo, Feather } from "@expo/vector-icons";
 
 
 import colors from "../config/colors";
@@ -22,7 +22,11 @@ const HomeScreen = ({navigation}) => {
                     </View>
                     <View style={styles.navbar}>
                         <CustomMenu />
-                        <View style={styles.levelBar}></View>
+                        <View style={styles.levelBar}>
+                            <Entypo name="progress-one" size={70}/>
+                            <View style={{width: 20}}></View>
+                            <Text style={{fontSize: 30}}>Lvl. 25</Text>
+                        </View>
                         <Pressable style={styles.createTask} onPress={() => navigation.navigate('Create Task')}>
                             <Feather name="plus-circle" size={70}/>
                         </Pressable>
@@ -56,7 +60,9 @@ const styles = StyleSheet.create({
     levelBar: {
         width: "65%",
         height: 75,
-        backgroundColor: colors.secondary,
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "row",
     },
     navbar: {
         flexDirection: "row",
@@ -71,6 +77,7 @@ const styles = StyleSheet.create({
         width: "100%",
         height: "45%",
         borderBottomWidth: 2,
+        // zIndex: 1
     },
 })
 
