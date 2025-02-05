@@ -93,7 +93,8 @@ const OpeningScreen = ({navigation}) => {
                             </View>
                         )}
                     </View>
-                    <Pressable>
+                    <View style={{height: 15}}></View>
+                    <Pressable onPress={() => navigation.navigate('ForgotPass')}>
                         <Text style={styles.forgotPassword}>Forgot Password? Click Here to Change it.</Text>
                     </Pressable>
                 </View>

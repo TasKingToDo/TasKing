@@ -4,7 +4,7 @@ import { Button, Text, View } from 'react-native';
 const SettingsScreen = ({navigation}) => {
     return (
         <View>
-            <Button title="Back" onPress={(navigation.navigate('Home'))}/>
+            <Button title="Back" onPress={() => navigation.navigate('Home')}/>
             <Text>Your Settings</Text>
         </View>
     );

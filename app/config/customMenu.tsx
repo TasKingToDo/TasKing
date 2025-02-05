@@ -10,6 +10,21 @@ const CustomMenu = () => {
     const [showPopover, setShowPopover] = useState(false);
     const navigation = useNavigation();
 
+    const handleFriendsNav = () => {
+        setShowPopover(false)
+        navigation.navigate('Friends')
+    }
+
+    const handleStatsNav = () => {
+        setShowPopover(false)
+        navigation.navigate('Stats')
+    }
+
+    const handleSettingsNav = () => {
+        setShowPopover(false)
+        navigation.navigate('Settings')
+    }
+
     return (
         <Popover 
             from={(
@@ -20,15 +35,14 @@ const CustomMenu = () => {
             isVisible={showPopover}
             onRequestClose={() => setShowPopover(false)}
             backgroundStyle={{backgroundColor: 'transparent'}}
-            arrowSize={{width: 50, height: 20}}
-            arrowShift={-1}>
-                <Pressable style={{flexDirection: "row", alignItems: "center"}} onPress={() => navigation.navigate('Friends')}>
+            arrowSize={{width: 55, height: 10}}>
+                <Pressable style={{flexDirection: "row", alignItems: "center"}} onPress={handleFriendsNav}>
                     <Entypo name="user" color={colors.black} size={50} />
                     <View style={styles.divider}></View>
                     <Text style={{fontSize: 40}}>Friends</Text>
                 </Pressable>
                 <View style={{height: 4}}></View>
-                <Pressable style={{flexDirection: "row", alignItems: "center"}} onPress={() => navigation.navigate('Stats')}>
+                <Pressable style={{flexDirection: "row", alignItems: "center"}} onPress={handleStatsNav}>
                     <Entypo name="line-graph" color={colors.black} size={50} />
                     <View style={styles.divider}></View>
                     <Text style={{fontSize: 40}}>Statistics</Text>
@@ -43,7 +57,7 @@ const CustomMenu = () => {
                     <Text style={{fontSize: 40}}>Resolution</Text>
                 </Pressable>
                 <View style={{height: 4}}></View>
-                <Pressable style={{flexDirection: "row", alignItems: "center"}} onPress={() => navigation.navigate('Settings')}>
+                <Pressable style={{flexDirection: "row", alignItems: "center"}} onPress={handleSettingsNav}>
                     <Entypo name="cog" color={colors.black} size={50} />
                     <View style={styles.divider}></View>
                     <Text style={{fontSize: 40}}>Settings</Text>
