@@ -1,0 +1,6 @@
+npm install react-native-truncated-text-view
+npm install @react-native-async-storage/async-storage
+npm install react-native-popover-view
+npm install @react-navigation/native
+npx expo install firebase
+npx expo install react-native-screens react-native-safe-area-context

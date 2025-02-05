@@ -1,13 +1,14 @@
-import React, { useState} from 'react';
+import React, { useState, useContext } from 'react';
 import { StyleSheet, View, Button, Image, TextInput, Pressable, Text } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-// RUN npx expo install firebase
 import { FIREBASE_APP } from '../../firebaseConfig'
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth} from 'firebase/auth';
+import { SettingsContext } from '../SettingsContext';
 
 import colors from "../config/colors";
 
 const OpeningScreen = ({navigation}) => {
+    const settings = useContext(SettingsContext);
     const [showLogin, setShowLogin] = useState(true);
     const [showSignUp, setShowSignUp] = useState(false);
     var [email, setEmail] = useState('');
@@ -81,15 +82,21 @@ const OpeningScreen = ({navigation}) => {
                         <View style={{width: 15}}/>
                         <Button color={colors.primary} title="Login" onPress={toggleLogin}/>
                         {showLogin && (
-                            <View style={styles.textFields} >
+                            <View style={styles.textFields}>
                                 <TextInput
-                                placeholder="Enter Email"
+                                    value={email}
+                                    placeholder="Enter Email"
+                                    autoCapitalize="none"
+                                    onChangeText={(text) => setEmail(text)} // <- Add this
                                 />
-                                <TextInput 
-                                placeholder="Enter Password"
-                                secureTextEntry={true}
+                                <TextInput
+                                    value={password}
+                                    placeholder="Enter Password"
+                                    secureTextEntry={true}
+                                    autoCapitalize="none"
+                                    onChangeText={(text) => setPassword(text)} // <- Add this
                                 />
-                            <Button color={colors.accept} title="Confirm Login" onPress={signIn} />
+                                <Button color={colors.accept} title="Confirm Login" onPress={signIn} />
                             </View>
                         )}
                     </View>
