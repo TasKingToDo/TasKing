@@ -14,6 +14,7 @@ import SettingsScreen from "./screens/SettingsScreen";
 import StatisticsScreen from "./screens/StatisticsScreen";
 import CreateTaskScreen from "./screens/CreateTaskScreen";
 import ForgotPassScreen from "./screens/ForgotPassScreen";
+import { SettingsProvider } from "./SettingsContext";
 
 //creating stack navigator
 const Stack = createNativeStackNavigator();
@@ -23,17 +24,19 @@ const Index = () => {
         /* Stack consists of the stack of screens in project.
         Project opens on the Welcome / Opening screen and will be
         navigated to other  screens via Stack. */
-        <Stack.Navigator>
-            <Stack.Screen name="Welcome" component={OpeningScreen} options={{headerShown: false}} />
-            <Stack.Screen name="ForgotPass" component={ForgotPassScreen} options={{headerShown: false}} />
-            <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Shop" component={ShopScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Tasks" component={TaskScreen} options={{headerShown: false}} />
-            <Stack.Screen name="Create Task" component={CreateTaskScreen} options={{headerShown: false}} />
-            <Stack.Screen name="Friends" component={FriendsScreen} options={{headerShown: false}} />
-            <Stack.Screen name="Stats" component={StatisticsScreen} options={{headerShown: false}} />
-            <Stack.Screen name="Settings" component={SettingsScreen} options={{headerShown: false}} />
-        </Stack.Navigator>
+        <SettingsProvider>
+            <Stack.Navigator>
+                <Stack.Screen name="Welcome" component={OpeningScreen} options={{headerShown: false}} />
+                <Stack.Screen name="ForgotPass" component={ForgotPassScreen} options={{headerShown: false}} />
+                <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+                <Stack.Screen name="Shop" component={ShopScreen} options={{ headerShown: false }} />
+                <Stack.Screen name="Tasks" component={TaskScreen} options={{headerShown: false}} />
+                <Stack.Screen name="Create Task" component={CreateTaskScreen} options={{headerShown: false}} />
+                <Stack.Screen name="Friends" component={FriendsScreen} options={{headerShown: false}} />
+                <Stack.Screen name="Stats" component={StatisticsScreen} options={{headerShown: false}} />
+                <Stack.Screen name="Settings" component={SettingsScreen} options={{headerShown: false}} />
+            </Stack.Navigator>
+        </SettingsProvider>
     );
 };
 

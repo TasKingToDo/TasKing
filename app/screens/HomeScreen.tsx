@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Entypo, Feather } from "@expo/vector-icons";
+import { SettingsContext } from '../SettingsContext';
 
 
 import colors from "../config/colors";
@@ -10,6 +11,7 @@ import ShopScreen from './ShopScreen';
 import CustomMenu from '../config/customMenu';
 
 const HomeScreen = ({navigation}) => {
+    const settings = useContext(SettingsContext);
     return (
         <SafeAreaProvider style={styles.background}>
             <SafeAreaView>

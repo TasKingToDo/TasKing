@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, StyleSheet, Image, Button, TextInput } from 'react-native';
+import { SettingsContext } from '../SettingsContext';
 
 import colors from "../config/colors";
 
 function ForgotPassScreen({navigation}) {
+    const settings = useContext(SettingsContext);
     var [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 

@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, Button } from 'react-native';
+import { SettingsContext } from '../SettingsContext';
 
 const CreateTaskScreen = ({navigation}) => {
+    const settings = useContext(SettingsContext);
     return (
         <View>
             <Button title="Back" onPress={() => navigation.navigate('Home')}/>

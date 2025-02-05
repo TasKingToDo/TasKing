@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Text, View, StyleSheet } from 'react-native';
 import { TruncatedTextView } from 'react-native-truncated-text-view';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import colors from '../config/colors';
+import { SettingsContext } from '../SettingsContext';
 
 const TaskScreen = () => {
+    const settings = useContext(SettingsContext);
 
     return (
         <SafeAreaProvider style={styles.taskSection}>
