@@ -7,7 +7,8 @@ import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 //npm install react-native-tab-view
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
-
+import colors from '../config/colors';
+import { SettingsContext } from '../SettingsContext';
 import bodyData from "../assets/shopdata/bodyData";
 import shirtData from "../assets/shopdata/shirtData";
 import pantsData from "../assets/shopdata/pantsData";
@@ -17,9 +18,6 @@ import accData from "../assets/shopdata/accData";
 
 //num of cols on bottom half of screen
 const numColumns = 3;
-//shop press colors
-const unpressColor = '#C4D7D8';
-const pressColor = '#aec7c8';
 
 //Menus with flatlists using data. Future development,
 //need to optimize with states instead of multiple screen instances
@@ -34,7 +32,7 @@ const BodyRoute = () => {
         renderItem={({ item }) => (
           <View style={styles.flatListContainer}>
             <Pressable style={({ pressed }) => [{
-              backgroundColor: pressed ? pressColor : unpressColor,
+              backgroundColor: pressed ? colors.emphasis : colors.primarySoft,
             }]}>
               <Image source={{ uri: item.imageUrl }} style={styles.thumbnails} />
             </Pressable>
@@ -56,7 +54,7 @@ const ShirtRoute = () => {
         renderItem={({ item }) => (
           <View style={styles.flatListContainer}>
             <Pressable style={({ pressed }) => [{
-              backgroundColor: pressed ? pressColor : unpressColor,
+              backgroundColor: pressed ? colors.emphasis : colors.primarySoft,
             }]}>
               <Image source={{ uri: item.imageUrl }} style={styles.thumbnails} />
             </Pressable>
@@ -78,7 +76,7 @@ const PantsRoute = () => {
         renderItem={({ item }) => (
           <View style={styles.flatListContainer}>
             <Pressable style={({ pressed }) => [{
-              backgroundColor: pressed ? pressColor : unpressColor,
+              backgroundColor: pressed ? colors.emphasis : colors.primarySoft,
             }]}>
               <Image source={{ uri: item.imageUrl }} style={styles.thumbnails} />
             </Pressable>
@@ -100,7 +98,7 @@ const HatRoute = () => {
         renderItem={({ item }) => (
           <View style={styles.flatListContainer}>
             <Pressable style={({ pressed }) => [{
-              backgroundColor: pressed ? pressColor : unpressColor,
+              backgroundColor: pressed ? colors.emphasis : colors.primarySoft,
             }]}>
               <Image source={{ uri: item.imageUrl }} style={styles.thumbnails} />
             </Pressable>
@@ -122,7 +120,7 @@ const ShoesRoute = () => {
         renderItem={({ item }) => (
           <View style={styles.flatListContainer}>
             <Pressable style={({ pressed }) => [{
-              backgroundColor: pressed ? pressColor : unpressColor,
+              backgroundColor: pressed ? colors.emphasis : colors.primarySoft,
             }]}>
               <Image source={{ uri: item.imageUrl }} style={styles.thumbnails} />
             </Pressable>
@@ -144,7 +142,7 @@ const AccRoute = () => {
         renderItem={({ item }) => (
           <View style={styles.flatListContainer}>
             <Pressable style={({ pressed }) => [{
-              backgroundColor: pressed ? pressColor : unpressColor,
+              backgroundColor: pressed ? colors.emphasis : colors.primarySoft,
             }]}>
               <Image source={{ uri: item.imageUrl }} style={styles.thumbnails} />
             </Pressable>
@@ -198,9 +196,9 @@ const ShopScreen = () => {
             <NavigationContainer>
               <Tab.Navigator
                 screenOptions={{
-                  tabBarStyle: { backgroundColor: '#C4D7D8' },
-                  tabBarActiveTintColor: 'black',
-                  tabBarInactiveTintColor: 'darkgray',
+                  tabBarStyle: { backgroundColor: colors.primarySoft },
+                  tabBarActiveTintColor: colors.black,
+                  tabBarInactiveTintColor: colors.white,
                 }}>
                 <Tab.Screen name="🧍" component={BodyRoute} />
                 <Tab.Screen name="👕" component={ShirtRoute} />
@@ -226,12 +224,12 @@ const styles = StyleSheet.create({
   background: {
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height / 2,
-    backgroundColor: '#E7F0F1',
+    backgroundColor: colors.primarySoft,
     paddingTop: 16,
     paddingBottom: 16,
   },
   flatListContainer: {
-    backgroundColor: '#C4D7D8',
+    backgroundColor: colors.primarySoft,
     marginVertical: 10,
     marginHorizontal: 6,
     paddingTop: 8,

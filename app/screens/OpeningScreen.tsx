@@ -2,10 +2,9 @@ import React, { useState, useContext } from 'react';
 import { StyleSheet, View, Button, Image, TextInput, Pressable, Text } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { FIREBASE_APP } from '../../firebaseConfig'
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth} from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import colors from '../config/colors';
 import { SettingsContext } from '../SettingsContext';
-
-import colors from "../config/colors";
 
 const OpeningScreen = ({navigation}) => {
     const settings = useContext(SettingsContext);
@@ -133,7 +132,7 @@ const styles = StyleSheet.create({
         top: 10,
     },
     signUpButton: {
-        backgroundColor: 'rgba(52,52,52,0.8)'
+        backgroundColor: colors.primary
     },
     textFields: {
         position: "absolute",

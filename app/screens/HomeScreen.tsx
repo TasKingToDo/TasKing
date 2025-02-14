@@ -2,10 +2,8 @@ import React, { useContext } from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Entypo, Feather } from "@expo/vector-icons";
+import colors from '../config/colors';
 import { SettingsContext } from '../SettingsContext';
-
-
-import colors from "../config/colors";
 import TaskScreen from './TaskScreen';
 import ShopScreen from './ShopScreen';
 import CustomMenu from '../config/customMenu';
@@ -55,7 +53,7 @@ const styles = StyleSheet.create({
     createTask: {
         width: "17.5%",
         height: 75,
-        backgroundColor: colors.white,
+        backgroundColor: colors.primary,
         justifyContent: "center",
         alignItems: "center",
     },
@@ -72,7 +70,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderTopWidth: 3,
         borderTopColor: colors.black,
-        backgroundColor: colors.white,
+        backgroundColor: colors.primary,
     },
     topHalf: {
         alignItems: "center",

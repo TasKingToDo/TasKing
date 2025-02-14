@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { Button, Text, View, StyleSheet } from 'react-native';
+import colors from '../config/colors';
 import { SettingsContext } from '../SettingsContext';
 
 const FriendsScreen = ({ navigation }) => {
