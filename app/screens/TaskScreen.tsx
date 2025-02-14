@@ -26,7 +26,7 @@ const TaskScreen = () => {
 const styles = StyleSheet.create({
     task: {
         height: 79,
-        backgroundColor: colors.white,
+        backgroundColor: colors.primarySoft,
         borderWidth: 2,
         fontSize: 18,
         padding: 10,

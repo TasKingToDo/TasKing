@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { View, Text, Button } from 'react-native';
+import colors from '../config/colors';
 import { SettingsContext } from '../SettingsContext';
 
 const CreateTaskScreen = ({navigation}) => {
