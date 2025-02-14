@@ -57,7 +57,7 @@ const OpeningScreen = ({navigation}) => {
         <SafeAreaProvider style={styles.background}>
             <SafeAreaView>
                 <View style={styles.background}>
-                    <Image style={styles.logo} source={require("../assets/images/react-logo.png")} />
+            <Image style={styles.logo} source={require("../assets/imgs/logo_large.png")} />
                     <View style={styles.buttons}>
                         <Button color={colors.grey} title="Signup" onPress={toggleSignup}/>
                         {showSignUp && (
@@ -126,8 +126,8 @@ const styles = StyleSheet.create({
         textDecorationLine: "underline"
     },
     logo: {
-        width: 100,
-        height: 100,
+        width: 408,
+        height: 128,
         position: "absolute",
         top: 10,
     },
