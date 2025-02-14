@@ -15,7 +15,7 @@ function ForgotPassScreen({navigation}) {
 
     return (
         <View style={styles.background}>
-            <Image style={styles.logo} source={require("../assets/images/react-logo.png")} />
+            <Image style={styles.logo} source={require("../assets/imgs/logo_small.png")} />
             <View style={styles.buttons}>
                 <View style={styles.textFields} >
                     <TextInput
