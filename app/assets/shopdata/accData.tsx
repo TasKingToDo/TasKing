@@ -3,23 +3,23 @@
 const accData = [
     {
         id: 1,
-        imageUrl: "https://raw.githubusercontent.com/ZB103/TasKing/refs/heads/main/app/assets/imgs/4bit/acc1.png",
+        imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Facc1.png?alt=media&token=a376d064-c96d-494d-bf99-c02ef6b09289",
     },
     {
         id: 2,
-      imageUrl: "https://raw.githubusercontent.com/ZB103/TasKing/refs/heads/main/app/assets/imgs/4bit/acc2.png",
+        imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Facc2.png?alt=media&token=31847b6d-539c-44cf-ac3b-d5b931e98629",
     },
     {
         id: 3,
-      imageUrl: "https://raw.githubusercontent.com/ZB103/TasKing/refs/heads/main/app/assets/imgs/4bit/acc3.png",
+        imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Facc3.png?alt=media&token=6d968ef5-98bf-48eb-955b-23cacd383e92",
     },
     {
         id: 4,
-      imageUrl: "https://raw.githubusercontent.com/ZB103/TasKing/refs/heads/main/app/assets/imgs/4bit/acc4.png",
+        imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Facc4.png?alt=media&token=0c575c1d-ecfb-4915-b94f-8a6d561175c6",
     },
     {
         id: 5,
-      imageUrl: "https://raw.githubusercontent.com/ZB103/TasKing/refs/heads/main/app/assets/imgs/4bit/acc5.png",
+        imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Facc5.png?alt=media&token=22f3f7de-b606-473d-af18-b01a8cc3217e",
     },
 ];
 

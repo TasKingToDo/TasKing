@@ -3,23 +3,23 @@
 const shoesData = [
     {
         id: 1,
-        imageUrl: "https://raw.githubusercontent.com/ZB103/TasKing/refs/heads/main/app/assets/imgs/4bit/shoes1.png",
+        imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fshoes1.png?alt=media&token=8c6b93a1-4850-4a99-b48e-1a48b77d7ee2",
     },
     {
         id: 2,
-      imageUrl: "https://raw.githubusercontent.com/ZB103/TasKing/refs/heads/main/app/assets/imgs/4bit/shoes2.png",
+        imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fshoes2.png?alt=media&token=4ade86b0-7a61-415e-bc67-e64807a1d4f6",
     },
     {
         id: 3,
-      imageUrl: "https://raw.githubusercontent.com/ZB103/TasKing/refs/heads/main/app/assets/imgs/4bit/shoes3.png",
+        imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fshoes3.png?alt=media&token=d434f623-0ac9-4462-af64-e6c9718c5354",
     },
     {
         id: 4,
-      imageUrl: "https://raw.githubusercontent.com/ZB103/TasKing/refs/heads/main/app/assets/imgs/4bit/shoes4.png",
+        imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fshoes4.png?alt=media&token=027ab506-7abd-4795-bb12-40f71e23223e",
     },
     {
         id: 5,
-      imageUrl: "https://raw.githubusercontent.com/ZB103/TasKing/refs/heads/main/app/assets/imgs/4bit/shoes5.png",
+        imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fshoes5.png?alt=media&token=ebd9b6c4-f8da-4db0-8487-e99d36f52cba",
     },
 ];
 
