@@ -57,7 +57,7 @@ const OpeningScreen = ({navigation}) => {
         <SafeAreaProvider style={styles.background}>
             <SafeAreaView>
                 <View style={styles.background}>
-            <Image style={styles.logo} source={require("../assets/imgs/logo_large.png")} />
+            <Image style={styles.logo} source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/logo_large.png?alt=media&token=23b05660-b758-4a03-a261-79b3eca54329" }} />
                     <View style={styles.buttons}>
                         <Button color={colors.grey} title="Signup" onPress={toggleSignup}/>
                         {showSignUp && (

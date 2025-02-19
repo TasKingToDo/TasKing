@@ -15,7 +15,7 @@ function ForgotPassScreen({navigation}) {
 
     return (
         <View style={styles.background}>
-            <Image style={styles.logo} source={require("../assets/imgs/logo_small.png")} />
+        <Image style={styles.logo} source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/logo_small.png?alt=media&token=b6f39eef-61b9-41d9-bf22-f1cf04163409" }} />
             <View style={styles.buttons}>
                 <View style={styles.textFields} >
                     <TextInput

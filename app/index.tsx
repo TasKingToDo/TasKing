@@ -25,7 +25,7 @@ const Index = () => {
         Project opens on the Welcome / Opening screen and will be
         navigated to other  screens via Stack. */
         <SettingsProvider>
-            <Stack.Navigator>
+        <Stack.Navigator>
                 <Stack.Screen name="Welcome" component={OpeningScreen} options={{headerShown: false}} />
                 <Stack.Screen name="ForgotPass" component={ForgotPassScreen} options={{headerShown: false}} />
                 <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
