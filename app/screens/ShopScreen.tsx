@@ -181,6 +181,8 @@ const ShopScreen = () => {
   return (
     <SafeAreaProvider style={styles.background}>
       <SafeAreaView>
+        {/* Displays amount of coins */}
+        
         {/* Top half of screen (display of the character) */}
         <View style={styles.imageContainer}>
           <Image source={require('../assets/imgs/background/bg_evening.png')} style={styles.bgImage} />
@@ -189,6 +191,10 @@ const ShopScreen = () => {
           <Image source={require('../assets/imgs/8bit/shirt5.png')} style={styles.image} />
           <Image source={require('../assets/imgs/8bit/shoes4.png')} style={styles.image} />
           <Image source={require('../assets/imgs/8bit/acc3.png')} style={styles.image} />
+        </View>
+        <View style={styles.coinCountContainer}>
+          <Image source={require('../assets/imgs/coin.png')} style={styles.coinImage} />
+          <Text style={styles.coinText}>100   </Text>
         </View>
         {/* Bottom half of screen (shop portion) */}
         <View style={styles.background}>
@@ -223,22 +229,29 @@ const ShopScreen = () => {
 const styles = StyleSheet.create({
   background: {
     width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height / 2,
+    height: Dimensions.get('window').height,
     backgroundColor: colors.primarySoft,
     paddingTop: 16,
     paddingBottom: 16,
   },
   flatListContainer: {
     backgroundColor: colors.primarySoft,
-    marginVertical: 10,
+    marginVertical: 5,
     marginHorizontal: 6,
-    paddingTop: 8,
     paddingBottom: 8,
     borderRadius: 10,
   },
   imageContainer: {
     justifyContent: 'center',
     alignItems: 'center',
+    paddingBottom: 5,
+  },
+  coinCountContainer: {
+    width: Dimensions.get('window').width,
+    height: 25,
+    backgroundColor: colors.secondary,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   thumbnails: {
     width: 128,
@@ -257,6 +270,17 @@ const styles = StyleSheet.create({
     objectFit: 'fill',
     position: 'absolute',
 
+  },
+  coinImage: {
+    width: 21,
+    height: 24,
+    padding: 1,
+  },
+  coinText: {
+    fontSize: 18,
+    paddingRight: 5,
+    fontWeight: 'bold',
+    color: colors.white,
   },
 })
 
