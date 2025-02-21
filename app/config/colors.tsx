@@ -5,7 +5,7 @@ export default {
   secondary: "#834971", //purple
   black: "#262C29",
   white: "#E7F0F1",
-    grey: "#808080",
-    accept: "#4ecd24",
+  grey: "#808080",
+  accept: "#4ecd24",
   decline: "#fc5c65",
 }

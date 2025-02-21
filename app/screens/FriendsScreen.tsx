@@ -17,7 +17,7 @@ const FriendsScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.buttonContainer}>
-                <Button title="Back" onPress={() => navigation.navigate('Home')} />
+                <Button title="Back" color={settings.darkMode ? colors.secondary : colors.primary} onPress={() => navigation.navigate('Home')} />
             </View>
         </View>
     );
