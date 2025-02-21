@@ -25,17 +25,16 @@ const Index = () => {
         Project opens on the Welcome / Opening screen and will be
         navigated to other  screens via Stack. */
         <SettingsProvider>
-        <Stack.Navigator>
-          <Stack.Screen name="Shop" component={ShopScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="Welcome" component={OpeningScreen} options={{headerShown: false}} />
-                <Stack.Screen name="ForgotPass" component={ForgotPassScreen} options={{headerShown: false}} />
-                <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-                
-                <Stack.Screen name="Tasks" component={TaskScreen} options={{headerShown: false}} />
-                <Stack.Screen name="Create Task" component={CreateTaskScreen} options={{headerShown: false}} />
-                <Stack.Screen name="Friends" component={FriendsScreen} options={{headerShown: false}} />
-                <Stack.Screen name="Stats" component={StatisticsScreen} options={{headerShown: false}} />
-                <Stack.Screen name="Settings" component={SettingsScreen} options={{headerShown: false}} />
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="Welcome" component={OpeningScreen}/>
+                <Stack.Screen name="ForgotPass" component={ForgotPassScreen}/>
+                <Stack.Screen name="Home" component={HomeScreen}/>
+                <Stack.Screen name="Shop" component={ShopScreen}/>
+                <Stack.Screen name="Tasks" component={TaskScreen}/>
+                <Stack.Screen name="Create Task" component={CreateTaskScreen}/>
+                <Stack.Screen name="Friends" component={FriendsScreen}/>
+                <Stack.Screen name="Stats" component={StatisticsScreen}/>
+                <Stack.Screen name="Settings" component={SettingsScreen}/>
             </Stack.Navigator>
         </SettingsProvider>
     );
