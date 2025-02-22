@@ -9,26 +9,29 @@ const StatisticsScreen = ({ navigation }) => {
     if (!settings) return null;
 
     return (
-        <View style={[styles.container, { backgroundColor: settings.darkMode ? '#222' : '#fff' }]}>
-            <View style={styles.textContainer}>
-                <Text style={[styles.text, { color: settings.darkMode ? '#fff' : '#000', fontSize: settings.fontSize }]}>
-                    Your Stats
-                </Text>
+        <View style={[styles.background, { backgroundColor: settings.darkMode ? colors.black : colors.white }]}>
+            <View style={styles.backButton}>
+                <Button title="Back" color={settings.darkMode ? colors.secondary : colors.primary} onPress={() => navigation.navigate('Home')} />
             </View>
-
-            <View style={styles.buttonContainer}>
-                <Button title="Back" onPress={() => navigation.navigate('Home')} />
+            <View style={styles.textContainer}>
+                <Text style={[styles.text, { color: settings.darkMode ? colors.white : colors.black}]}>Your Stats</Text>
             </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
+    backButton: {
+        position: "absolute",
+        top: "1%",
+        left: "2%",
+        width: "20%",
+        height: "7%",
+    },
+    background: {
         flex: 1,
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        paddingVertical: 20,
+        justifyContent: "flex-end",
+        alignItems: "center",
     },
     textContainer: {
         flex: 1,
@@ -39,10 +42,9 @@ const styles = StyleSheet.create({
     },
     text: {
         fontWeight: 'bold',
-    },
-    buttonContainer: {
-        paddingBottom: 20,
-        alignSelf: 'center',
+        position: "absolute",
+        top: "5%",
+        fontSize: 30
     },
 });
 

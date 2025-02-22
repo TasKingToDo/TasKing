@@ -1,48 +1,82 @@
 import React, { useContext } from 'react';
-import { Button, Text, View, StyleSheet } from 'react-native';
+import { Button, Text, View, StyleSheet, Pressable, Dimensions } from 'react-native';
+import { useSharedValue } from 'react-native-reanimated';
+import { Entypo } from '@expo/vector-icons';
 import colors from '../config/colors';
 import { SettingsContext } from '../SettingsContext';
+import CustomMenu from '../config/customMenu';
+
+const { height } = Dimensions.get("window");
+const NAV_BAR_HEIGHT = 75;
+const MID_POSITION = 0;
 
 const FriendsScreen = ({ navigation }) => {
+    const translateY = useSharedValue(MID_POSITION);
+    const navbarVisible = translateY.value <= height * 0.15;
     const settings = useContext(SettingsContext);
 
     if (!settings) return null;
 
-    return (
-        <View style={[styles.container, { backgroundColor: settings.darkMode ? '#222' : '#fff' }]}>
-            <View style={styles.textContainer}>
-                <Text style={[styles.text, { color: settings.darkMode ? '#fff' : '#000', fontSize: settings.fontSize }]}>
-                    Your Friends
-                </Text>
-            </View>
+    const handleAddFriend = () => {
+        alert("Friend Menu Opened")
+    }
 
-            <View style={styles.buttonContainer}>
+    return (
+        <View style={[styles.background, { backgroundColor: settings.darkMode ? colors.black : colors.white }]}>
+            <View style={styles.backButton}>
                 <Button title="Back" color={settings.darkMode ? colors.secondary : colors.primary} onPress={() => navigation.navigate('Home')} />
+            </View>
+            <View style={styles.textContainer}>
+                <Text style={[styles.text, { color: settings.darkMode ? colors.white : colors.black}]}>Your Friends</Text>
+            </View>
+            <View style={[styles.navbar, {backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]}>
+                <CustomMenu navbarVisible={navbarVisible}/>
+                <View style={{width: "65%"}}></View>
+                <Pressable style={styles.addFriend} onPress={handleAddFriend}>
+                    <Entypo name="add-user" size={70} color={settings.darkMode ? colors.white : colors.black} />
+                </Pressable>
             </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
+    addFriend: {
+        width: "17.5%",
+        height: 75,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    backButton: {
+        position: "absolute",
+        top: "1%",
+        left: "2%",
+        width: "20%",
+        height: "7%",
+    },
+    background: {
         flex: 1,
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        paddingVertical: 20,
+        justifyContent: "flex-end",
+        alignItems: "center",
+    },
+    navbar: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        borderTopWidth: 3,
+        borderTopColor: colors.black,
+        overflow: "visible",
     },
     textContainer: {
         flex: 1,
-        justifyContent: 'flex-start',
-        alignItems: 'center',
         width: '100%',
-        paddingTop: 50,
+        alignItems: "center",
     },
     text: {
         fontWeight: 'bold',
-    },
-    buttonContainer: {
-        paddingBottom: 20,
-        alignSelf: 'center',
+        position: "absolute",
+        top: "5%",
+        fontSize: 30
     },
 });
 
