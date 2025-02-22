@@ -70,7 +70,7 @@ const HomeScreen = ({navigation}) => {
         position: 'absolute',
         bottom: 0,
         display: translateY.value > height * 0.15 ? 'none' : 'flex',
-        backgroundColor: colors.white,
+        backgroundColor: colors.primarySoft,
     }));
     
     return (
@@ -95,7 +95,7 @@ const HomeScreen = ({navigation}) => {
                     <Animated.View style={[styles.shopContainer, shopAnimatedStyle]}>
                         <ShopScreen />
                     </Animated.View>
-                    <Animated.View style={[styles.navbar, navbarAnimatedStyle, { backgroundColor: settings.darkMode ? colors.secondary : colors.primary }]}>\
+                    <Animated.View style={[styles.navbar, navbarAnimatedStyle, { backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]}>
                         <CustomMenu navbarVisible={navbarVisible} />
                         <View style={styles.levelBar}>
                             <Entypo name="progress-one" size={70} color={settings.darkMode ? colors.white : colors.black} />
