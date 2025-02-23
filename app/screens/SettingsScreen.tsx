@@ -2,9 +2,20 @@ import React, { useContext } from 'react';
 import { Button, Text, View, Switch, TouchableOpacity, StyleSheet } from 'react-native';
 import { SettingsContext } from '../SettingsContext';
 import colors from '../config/colors';
+import { getAuth, signOut } from 'firebase/auth';
 
 const SettingsScreen = ({ navigation }) => {
   const settings = useContext(SettingsContext);
+  const auth = getAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log('User logged out successfully')
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   if (!settings) return null;
 
@@ -35,6 +46,10 @@ const SettingsScreen = ({ navigation }) => {
           style={{ padding: 10, backgroundColor: '#ddd', borderRadius: 5, marginHorizontal: 10 }}>
           <Text style={{ fontSize: 18 }}>➕</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -59,12 +74,29 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignItems: "center",
-},
-text: {
+  },
+  text: {
+      fontWeight: 'bold',
+      position: "absolute",
+      top: "5%",
+      fontSize: 30,
+      textDecorationLine: "underline"
+  },
+  logoutButton: {
+    position: 'absolute',
+    top: 350,
+    backgroundColor: 'red',
+    borderRadius: 8,
+    paddingVertical: 15,
+    paddingHorizontal: 50, 
+    minWidth: 150,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutText: {
+    color: 'white',
+    fontSize: 18,
     fontWeight: 'bold',
-    position: "absolute",
-    top: "5%",
-    fontSize: 30,
-    textDecorationLine: "underline"
-},
+    textAlign: 'center',
+  },
 })
