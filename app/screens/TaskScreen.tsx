@@ -67,23 +67,47 @@ const TaskScreen = () => {
 
     const handleDeleteTask = async (taskId: string) => {
         try {
-            await deleteDoc(doc(FIREBASE_DB, "tasks", taskId));
-            setTasks(tasks.filter(task => task.id !== taskId));
+            console.log(`Deleting task: ${taskId}`);
+    
+            const taskRef = doc(FIREBASE_DB, "tasks", taskId);
+    
+            // ✅ Delete from Firestore
+            await deleteDoc(taskRef);
+    
+            // ✅ Log success
+            console.log(`Task ${taskId} successfully deleted from Firebase`);
+    
+            // ✅ Fetch latest tasks from Firebase after deletion
+            const querySnapshot = await getDocs(collection(FIREBASE_DB, "tasks"));
+            setTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
+    
         } catch (error) {
-            console.error("Error deleting task:", error);
+            console.error("❌ Error deleting task:", error);
         }
     };
+    
 
     const handleCompleteTask = async (task: Task) => {
         try {
-            await updateDoc(doc(FIREBASE_DB, "tasks", task.id), {
-                completed: !task.completed
-            });
-            setTasks(tasks.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t));
+            console.log(`Toggling complete for task: ${task.id} - Current status: ${task.completed}`);
+    
+            const taskRef = doc(FIREBASE_DB, "tasks", task.id);
+            const updatedStatus = !task.completed;
+    
+            // ✅ Update Firestore
+            await updateDoc(taskRef, { completed: updatedStatus });
+    
+            // ✅ Log success
+            console.log(`Task ${task.id} updated to completed: ${updatedStatus}`);
+    
+            // ✅ Fetch latest tasks from Firebase to ensure update is reflected
+            const querySnapshot = await getDocs(collection(FIREBASE_DB, "tasks"));
+            setTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
+    
         } catch (error) {
-            console.error("Error updating task:", error);
+            console.error("❌ Error marking task as complete:", error);
         }
-    };
+    };        
     
     const formatRepeat = (repeat) => {
         if (!repeat || repeat === "none") return "";
@@ -95,37 +119,22 @@ const TaskScreen = () => {
         return repeat.charAt(0).toUpperCase() + repeat.slice(1);
     };
 
-    const renderLeftActions = (progress, dragX, taskId) => {
-        const opacity = dragX.interpolate({
-            inputRange: [-100, 0],
-            outputRange: [1, 0],
-            extrapolate: 'clamp',
-        });
-
-        return (
-            <Animated.View style={[styles.deleteContainer, { opacity }]}>
-                <Pressable onPress={() => handleDeleteTask(taskId)}>
-                    <Text style={styles.deleteText}>Delete</Text>
-                </Pressable>
-            </Animated.View>
-        );
-    };
-
-    const renderRightActions = (progress, dragX, task) => {
-        const opacity = dragX.interpolate({
-            inputRange: [0, 100],
-            outputRange: [0, 1],
-            extrapolate: 'clamp',
-        });
-
-        return (
-            <Animated.View style={[styles.completeContainer, { opacity }]}>
-                <Pressable onPress={() => handleCompleteTask(task)}>
-                    <Text style={styles.completeText}>{task.completed ? "Undo" : "Complete"}</Text>
-                </Pressable>
-            </Animated.View>
-        );
-    };
+    const renderLeftActions = (progress, dragX, taskId) => (
+        <Animated.View style={styles.deleteContainer}>
+            <Pressable onPress={() => handleDeleteTask(taskId)}>
+                <Text style={styles.deleteText}>Delete</Text>
+            </Pressable>
+        </Animated.View>
+    );
+    
+    const renderRightActions = (progress, dragX, task) => (
+        <Animated.View style={styles.completeContainer}>
+            <Pressable onPress={() => handleCompleteTask(task)}>
+                <Text style={styles.completeText}>{task.completed ? "Undo" : "Complete"}</Text>
+            </Pressable>
+        </Animated.View>
+    );
+     
 
     const handleTaskPress = (taskId: string) => {
         setExpandedTask(expandedTask === taskId ? null : taskId);
@@ -151,7 +160,8 @@ const TaskScreen = () => {
                                     <Pressable onPress={() => handleTaskPress(item.id)}>
                                         <View style={[
                                             styles.taskContainer,
-                                            item.completed && styles.completedTask
+                                            item.completed && styles.completedTask,
+                                            {backgroundColor: settings.darkMode ? colors.black : colors.white}
                                         ]}>
                                             <Text style={[styles.taskTitle, { color: settings.darkMode ? colors.white : colors.black }]}>
                                                 {item.name} {item.completed ? "✅" : ""}

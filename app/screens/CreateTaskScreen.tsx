@@ -207,6 +207,7 @@ const styles = StyleSheet.create({
     repeatPickers: {
         height: 50, 
         width: 140,
+        backgroundColor: colors.primarySoft,
     },
     saveTask: {
         width: "17.5%",
@@ -217,7 +218,8 @@ const styles = StyleSheet.create({
     text: {
         position: "absolute",
         top: "5%",
-        fontSize: 30
+        fontSize: 30,
+        textDecorationLine: "underline",
     },
     textContainer: {
         flex: 1,
@@ -225,6 +227,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     textInput: {
-        fontSize: 25
+        fontSize: 25,
+        backgroundColor: colors.primarySoft,
+        borderWidth: 2,
+        borderRadius: 8
     },
 })
