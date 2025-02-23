@@ -2,6 +2,10 @@
 //Temporarily using GitHub web links until can figure out how to use local files
 const hatData = [
     {
+      id: 0,
+      imageUrl: 'null',
+    },
+    {
         id: 1,
         imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fhat1.png?alt=media&token=59af59cb-2cae-42bc-8208-2148109662ed",
     },

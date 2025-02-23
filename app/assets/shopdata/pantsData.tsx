@@ -2,6 +2,10 @@
 //Temporarily using GitHub web links until can figure out how to use local files
 const pantsData = [
     {
+      id: 0,
+      imageUrl: 'null',
+    },
+    {
         id: 1,
         imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fpants1.png?alt=media&token=bd6acb1a-eb39-4fc5-bb9a-7db56571ed8b",
     },

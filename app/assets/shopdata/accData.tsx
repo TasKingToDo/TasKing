@@ -2,6 +2,10 @@
 //Temporarily using GitHub web links until can figure out how to use local files
 const accData = [
     {
+      id: 0,
+      imageUrl: 'null',
+    },
+    {
         id: 1,
         imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Facc1.png?alt=media&token=a376d064-c96d-494d-bf99-c02ef6b09289",
     },
