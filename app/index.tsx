@@ -15,29 +15,43 @@ import StatisticsScreen from "./screens/StatisticsScreen";
 import CreateTaskScreen from "./screens/CreateTaskScreen";
 import ForgotPassScreen from "./screens/ForgotPassScreen";
 import { SettingsProvider } from "./SettingsContext";
+import { AuthProvider, authContext } from "../authContext";
 
 //creating stack navigator
 const Stack = createNativeStackNavigator();
 
+const RootNavigator = () => {
+  const { user } = React.useContext(authContext);
+
+  return (
+    <SettingsProvider>
+      <Stack.Navigator>
+        {user ? (
+          // navigate here if auth state is detected
+          <>
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Shop" component={ShopScreen} />
+            <Stack.Screen name="Tasks" component={TaskScreen} />
+            <Stack.Screen name="Create Task" component={CreateTaskScreen} />
+            <Stack.Screen name="Friends" component={FriendsScreen} />
+            <Stack.Screen name="Stats" component={StatisticsScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="ForgotPass" component={ForgotPassScreen} />
+          </>
+        ) : (
+          <Stack.Screen name="Welcome" component={OpeningScreen} />
+        )}
+      </Stack.Navigator>
+    </SettingsProvider>
+  );
+};
+
 const Index = () => {
-    return (
-        /* Stack consists of the stack of screens in project.
-        Project opens on the Welcome / Opening screen and will be
-        navigated to other  screens via Stack. */
-        <SettingsProvider>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="Welcome" component={OpeningScreen}/>
-                <Stack.Screen name="ForgotPass" component={ForgotPassScreen}/>
-                <Stack.Screen name="Home" component={HomeScreen}/>
-                <Stack.Screen name="Shop" component={ShopScreen}/>
-                <Stack.Screen name="Tasks" component={TaskScreen}/>
-                <Stack.Screen name="Create Task" component={CreateTaskScreen}/>
-                <Stack.Screen name="Friends" component={FriendsScreen}/>
-                <Stack.Screen name="Stats" component={StatisticsScreen}/>
-                <Stack.Screen name="Settings" component={SettingsScreen}/>
-            </Stack.Navigator>
-        </SettingsProvider>
-    );
+  return (
+    <AuthProvider>
+      <RootNavigator />
+    </AuthProvider>
+  );
 };
 
 export default Index;
