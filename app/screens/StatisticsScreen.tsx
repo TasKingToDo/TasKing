@@ -44,7 +44,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         position: "absolute",
         top: "5%",
-        fontSize: 30
+        fontSize: 30,
+        textDecorationLine: "underline",
     },
 });
 
