@@ -30,15 +30,14 @@ const OpeningScreen = ({navigation}) => {
 
     const signIn = async () => {
         try {
-            const response = await signInWithEmailAndPassword(auth, email, password);
-            console.log(response);
-            alert('Sign in was successful')
-            navigation.navigate('Home')
+          const response = await signInWithEmailAndPassword(auth, email, password);
+          console.log(response);
+          // navigation.navigate('Shop') # Debugging purposes if rootnav doesn't work
         } catch (error) {
-            console.log(error);
-            alert('sign in failed: ' + error.message)
+          console.log(error);
+          alert('sign in failed: ' + error.message);
         }
-    }
+      };
 
     const signUp = async () => {
         try {
@@ -123,7 +122,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     changePassLine: {
-        position: "absolute",
         top: "60%",
     },
     forgotPassword: {
