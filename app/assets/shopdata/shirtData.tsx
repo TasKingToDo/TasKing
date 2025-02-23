@@ -3,6 +3,10 @@
 
 const shirtData = [
     {
+      id: 0,
+      imageUrl: 'null',
+    },
+    {
         id: 1,
         imageUrl: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fshirt1.png?alt=media&token=e85df23e-d994-491f-8095-dc9895265ce9",
     },
