@@ -16,6 +16,7 @@ import CreateTaskScreen from "./screens/CreateTaskScreen";
 import ForgotPassScreen from "./screens/ForgotPassScreen";
 import { SettingsProvider } from "./config/SettingsContext";
 import { AuthProvider, authContext } from "./config/authContext";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 //creating stack navigator
 const Stack = createNativeStackNavigator();
@@ -25,23 +26,28 @@ const RootNavigator = () => {
 
   return (
     <SettingsProvider>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {user ? (
-          // navigate here if auth state is detected
-          <>
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="Shop" component={ShopScreen} />
-            <Stack.Screen name="Tasks" component={TaskScreen} />
-            <Stack.Screen name="Create Task" component={CreateTaskScreen} />
-            <Stack.Screen name="Friends" component={FriendsScreen} />
-            <Stack.Screen name="Stats" component={StatisticsScreen} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
-            <Stack.Screen name="ForgotPass" component={ForgotPassScreen} />
-          </>
-        ) : (
-          <Stack.Screen name="Welcome" component={OpeningScreen} />
-        )}
-      </Stack.Navigator>
+      <SafeAreaProvider>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {user ? (
+            // navigate here if auth state is detected
+            <>
+              <Stack.Screen name="Home" component={HomeScreen} />
+              <Stack.Screen name="Shop" component={ShopScreen} />
+              <Stack.Screen name="Tasks" component={TaskScreen} />
+              <Stack.Screen name="Create Task" component={CreateTaskScreen} />
+              <Stack.Screen name="Friends" component={FriendsScreen} />
+              <Stack.Screen name="Stats" component={StatisticsScreen} />
+              <Stack.Screen name="Settings" component={SettingsScreen} />
+              <Stack.Screen name="ForgotPass" component={ForgotPassScreen} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="Welcome" component={OpeningScreen} />
+              <Stack.Screen name="ForgotPass" component={ForgotPassScreen} />
+            </>
+          )}
+        </Stack.Navigator>
+      </SafeAreaProvider>
     </SettingsProvider>
   );
 };

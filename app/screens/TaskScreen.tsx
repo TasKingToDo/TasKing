@@ -240,59 +240,6 @@ const TaskScreen = () => {
     );
 };
 
-const generateRecurringTasks = (task: Task) => {
-    let occurrences = [];
-    let startDate = new Date(task.date);
-
-    if (isNaN(startDate.getTime())) {
-        console.error(`Invalid date for task: ${task.name}, Date: ${task.date}`);
-        return [task];
-    }
-
-    for (let i = 1; i <= 3; i++) {
-        let newDate = new Date(startDate);
-
-        if (typeof task.repeat === "object") {
-            let { type, interval } = task.repeat;
-
-            if (type === "days") newDate.setDate(newDate.getDate() + (interval * i));
-            if (type === "weeks") newDate.setDate(newDate.getDate() + (7 * interval * i));
-            if (type === "months") {
-                let tempMonth = newDate.getMonth() + (interval * i);
-                newDate.setMonth(tempMonth);
-
-                if (newDate.getDate() !== startDate.getDate()) {
-                    newDate.setDate(0);
-                }
-            }
-        } else {
-            if (task.repeat === "daily") newDate.setDate(newDate.getDate() + i);
-            if (task.repeat === "weekly") newDate.setDate(newDate.getDate() + (7 * i));
-            if (task.repeat === "monthly") {
-                let tempMonth = newDate.getMonth() + i;
-                newDate.setMonth(tempMonth);
-
-                if (newDate.getDate() !== startDate.getDate()) {
-                    newDate.setDate(0);
-                }
-            }
-        }
-
-        if (!isNaN(newDate.getTime())) {
-            occurrences.push({
-                ...task,
-                id: `${task.id}_${i}`,
-                date: newDate.toISOString().split("T")[0],
-            });
-        } else {
-            console.warn(`Skipped invalid generated date for task: ${task.name}`);
-        }
-    }
-
-    return occurrences;
-};
-
-
 const styles = StyleSheet.create({
     completeContainer: {
         backgroundColor: 'green',

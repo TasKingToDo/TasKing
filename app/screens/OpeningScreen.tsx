@@ -1,9 +1,10 @@
 import React, { useState, useContext } from 'react';
-import { StyleSheet, View, Button, Image, TextInput, Pressable, Text } from 'react-native';
+import { StyleSheet, View, Button, Image, TextInput, Pressable, Text, Platform } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { FIREBASE_APP, FIREBASE_DB } from '@/firebaseConfig'
 import { collection, doc, setDoc } from "firebase/firestore";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, } from 'react-native';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
 
@@ -56,7 +57,7 @@ const OpeningScreen = ({navigation}) => {
                 owneditems: [],
                 pfp: "",
                 username: username || "NewUser",
-                xp: 1
+                xp: 0
             });
 
             alert('Sign-up successful!');
@@ -69,57 +70,61 @@ const OpeningScreen = ({navigation}) => {
     };
 
     return (
-        <SafeAreaProvider style={styles.background}>
-            <SafeAreaView>
-                <View style={styles.background}>
-                    <Image style={styles.logo} source={require("../assets/imgs/logo_large.png")} />
-                    <View style={styles.buttons}>
-                        <Button color={colors.grey} title="Signup" onPress={toggleSignup}/>
-                        {showSignUp && (
-                            <View style={styles.textFields} >
-                                <TextInput
-                                    value={email}
-                                    placeholder="Enter Email"
-                                    autoCapitalize="none"
-                                    onChangeText={(text) => setEmail(text)}
-                                />
-                                <TextInput 
-                                    secureTextEntry={true}
-                                    value={password}
-                                    placeholder="Enter Password"
-                                    autoCapitalize="none"
-                                    onChangeText={(text) => setPassword(text)}
-                                />
-                                <Button color={colors.accept} title="Confirm Sign Up" onPress={signUp} />
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
+                    <SafeAreaView style={styles.container}>
+                        <View style={styles.background}>
+                            <Image style={styles.logo} source={require("../assets/imgs/logo_large.png")} />
+                            <View style={styles.buttons}>
+                                <Button color={colors.grey} title="Signup" onPress={toggleSignup}/>
+                                {showSignUp && (
+                                    <View style={styles.textFields} >
+                                        <TextInput
+                                            value={email}
+                                            placeholder="Enter Email"
+                                            autoCapitalize="none"
+                                            onChangeText={(text) => setEmail(text)}
+                                        />
+                                        <TextInput 
+                                            secureTextEntry={true}
+                                            value={password}
+                                            placeholder="Enter Password"
+                                            autoCapitalize="none"
+                                            onChangeText={(text) => setPassword(text)}
+                                        />
+                                        <Button color={colors.accept} title="Confirm Sign Up" onPress={signUp} />
+                                    </View>
+                                )}
+                                <View style={{width: 15}}/>
+                                <Button color={colors.primary} title="Login" onPress={toggleLogin}/>
+                                {showLogin && (
+                                    <View style={styles.textFields}>
+                                        <TextInput
+                                            value={email}
+                                            placeholder="Enter Email"
+                                            autoCapitalize="none"
+                                            onChangeText={(text) => setEmail(text)} // <- Add this
+                                        />
+                                        <TextInput
+                                            value={password}
+                                            placeholder="Enter Password"
+                                            secureTextEntry={true}
+                                            autoCapitalize="none"
+                                            onChangeText={(text) => setPassword(text)} // <- Add this
+                                        />
+                                        <Button color={colors.accept} title="Confirm Login" onPress={signIn} />
+                                    </View>
+                                )}
                             </View>
-                        )}
-                        <View style={{width: 15}}/>
-                        <Button color={colors.primary} title="Login" onPress={toggleLogin}/>
-                        {showLogin && (
-                            <View style={styles.textFields}>
-                                <TextInput
-                                    value={email}
-                                    placeholder="Enter Email"
-                                    autoCapitalize="none"
-                                    onChangeText={(text) => setEmail(text)} // <- Add this
-                                />
-                                <TextInput
-                                    value={password}
-                                    placeholder="Enter Password"
-                                    secureTextEntry={true}
-                                    autoCapitalize="none"
-                                    onChangeText={(text) => setPassword(text)} // <- Add this
-                                />
-                                <Button color={colors.accept} title="Confirm Login" onPress={signIn} />
+                            <View style={styles.changePassLine}>
+                                <Pressable onPress={() => navigation.navigate("ForgotPass")}>
+                                    <Text style={styles.forgotPassword}>Forgot Password? Click Here to Change it.</Text>
+                                </Pressable>
                             </View>
-                        )}
-                    </View>
-                    <Pressable onPress={() => navigation.navigate('ForgotPass')} style={styles.changePassLine}>
-                        <Text style={styles.forgotPassword}>Forgot Password? Click Here to Change it.</Text>
-                    </Pressable>
-                </View>
-            </SafeAreaView>
-        </SafeAreaProvider>
+                        </View>
+                    </SafeAreaView>
+                </KeyboardAvoidingView>
+            </TouchableWithoutFeedback>
     );
 }
 
@@ -137,7 +142,11 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "center",
     },
+    container: {
+        flex: 1,
+    },
     changePassLine: {
+        position: "absolute",
         top: "60%",
     },
     forgotPassword: {
