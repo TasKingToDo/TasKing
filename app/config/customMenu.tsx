@@ -5,7 +5,7 @@ import Popover from 'react-native-popover-view';
 
 import colors from "./colors";
 import { useNavigation } from 'expo-router';
-import { SettingsContext } from '../SettingsContext';
+import { SettingsContext } from './SettingsContext';
 
 const CustomMenu = ({navbarVisible}) => {
     const [showPopover, setShowPopover] = useState(false);

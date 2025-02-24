@@ -14,8 +14,8 @@ import SettingsScreen from "./screens/SettingsScreen";
 import StatisticsScreen from "./screens/StatisticsScreen";
 import CreateTaskScreen from "./screens/CreateTaskScreen";
 import ForgotPassScreen from "./screens/ForgotPassScreen";
-import { SettingsProvider } from "./SettingsContext";
-import { AuthProvider, authContext } from "../authContext";
+import { SettingsProvider } from "./config/SettingsContext";
+import { AuthProvider, authContext } from "./config/authContext";
 
 //creating stack navigator
 const Stack = createNativeStackNavigator();
@@ -25,7 +25,7 @@ const RootNavigator = () => {
 
   return (
     <SettingsProvider>
-      <Stack.Navigator>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           // navigate here if auth state is detected
           <>

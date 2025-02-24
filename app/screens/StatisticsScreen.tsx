@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Button, Text, View, StyleSheet } from 'react-native';
 import colors from '../config/colors';
-import { SettingsContext } from '../SettingsContext';
+import { SettingsContext } from '../config/SettingsContext';
 
 const StatisticsScreen = ({ navigation }) => {
     const settings = useContext(SettingsContext);
