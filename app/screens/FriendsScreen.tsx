@@ -1,51 +1,40 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Button, Text, View, StyleSheet, Pressable, Dimensions, FlatList } from 'react-native';
+import { Button, Text, View, StyleSheet, Pressable, Dimensions, FlatList, TextInput, Alert, Modal} from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { Entypo } from '@expo/vector-icons';
-import { collection, doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, updateDoc, query, where, getDocs } from "firebase/firestore";
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
 import CustomMenu from '../config/customMenu';
-import { FIREBASE_DB, FIREBASE_AUTH } from '@/firebaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
+import { FIREBASE_DB } from '@/firebaseConfig';
+import { authContext } from '../config/authContext';
+
 
 const { height } = Dimensions.get("window");
 const NAV_BAR_HEIGHT = 75;
 const MID_POSITION = 0;
 
 const FriendsScreen = ({ navigation }) => {
+    const { user } = useContext(authContext);
     const [friends, setFriends] = useState([]);
+    const [friendUsername, setFriendUsername] = useState('');
+    const [modalVisible, setModalVisible] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
     const translateY = useSharedValue(MID_POSITION);
     const navbarVisible = translateY.value <= height * 0.15;
     const settings = useContext(SettingsContext);
 
     useEffect(() => {
-        // Listen for authentication state changes
-        const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, (user) => {
-            if (user) {
-                setUserId(user.uid);
-            } else {
-                setUserId(null);
-            }
-        });
+        if (!user) return; // Ensure user is logged in
 
-        return () => unsubscribe();
-    }, []);
-
-    useEffect(() => {
         const fetchFriends = async () => {
-            if (!userId) return;
-
             try {
-                const userRef = doc(FIREBASE_DB, "users", userId);
+                const userRef = doc(FIREBASE_DB, "users", user.uid);
                 const userSnap = await getDoc(userRef);
 
                 if (userSnap.exists()) {
                     const userData = userSnap.data();
                     setFriends(userData.Friends || []);
-                } else {
-                    console.log("No such user found!");
                 }
             } catch (error) {
                 console.error("Error fetching friends:", error);
@@ -53,13 +42,71 @@ const FriendsScreen = ({ navigation }) => {
         };
 
         fetchFriends();
-    }, [userId]);
+    }, [user]); // Refetch when user changes
 
-    if (!settings) return null;
+    if (!settings || !user) return null;
 
-    const handleAddFriend = () => {
-        alert("Friend Menu Opened")
-    }
+    const handleAddFriend = async () => {
+        if (!friendUsername.trim()) {
+            Alert.alert("Error", "Please enter a username.");
+            return;
+        }
+
+        try {
+            // Find user by username
+            const q = query(collection(FIREBASE_DB, "users"), where("username", "==", friendUsername.trim()));
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                Alert.alert("Error", "No user found with that username.");
+                return;
+            }
+
+            const friendDoc = querySnapshot.docs[0]; // Get the first result
+            const friendData = friendDoc.data();
+            const friendId = friendDoc.id;
+
+            if (friendId === user.uid) {
+                Alert.alert("Error", "You cannot add yourself as a friend.");
+                return;
+            }
+
+            const userRef = doc(FIREBASE_DB, "users", user.uid);
+            const friendRef = doc(FIREBASE_DB, "users", friendId);
+
+            // Fetch current user and friend data
+            const userSnap = await getDoc(userRef);
+            if (!userSnap.exists()) {
+                Alert.alert("Error", "Your user data could not be found.");
+                return;
+            }
+
+            const userData = userSnap.data();
+            const currentFriends = userData.Friends || [];
+
+            if (currentFriends.includes(friendUsername.trim())) {
+                Alert.alert("Error", "You are already friends with this user.");
+                return;
+            }
+
+            // Update friends list for both users
+            await updateDoc(userRef, {
+                Friends: [...currentFriends, friendUsername.trim()]
+            });
+
+            await updateDoc(friendRef, {
+                Friends: [...(friendData.Friends || []), userData.username]
+            });
+
+            setFriends([...currentFriends, friendUsername.trim()]); // Update state
+            setFriendUsername(""); // Clear input
+            setModalVisible(false); // Close modal
+            Alert.alert("Success", `${friendUsername} has been added as a friend!`);
+        } catch (error) {
+            console.error("Error adding friend:", error);
+            Alert.alert("Error", "Something went wrong. Please try again.");
+        }
+    };
 
     return (
         <View style={[styles.background, { backgroundColor: settings.darkMode ? colors.black : colors.white }]}>
@@ -86,10 +133,33 @@ const FriendsScreen = ({ navigation }) => {
             <View style={[styles.navbar, {backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]}>
                 <CustomMenu navbarVisible={navbarVisible}/>
                 <View style={{width: "65%"}}></View>
-                <Pressable style={styles.addFriend} onPress={handleAddFriend}>
+                <Pressable style={styles.addFriend} onPress={() => setModalVisible(true)}>
                     <Entypo name="add-user" size={70} color={settings.darkMode ? colors.white : colors.black} />
                 </Pressable>
             </View>
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Add Friend</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter friend's username"
+                            autoCapitalize="none"
+                            value={friendUsername}
+                            onChangeText={setFriendUsername}
+                        />
+                        <View style={styles.modalButtons}>
+                            <Button title="Cancel" onPress={() => setModalVisible(false)} color="red" />
+                            <Button title="Add Friend" onPress={handleAddFriend} color="green" />
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -116,6 +186,36 @@ const styles = StyleSheet.create({
     friendList: {
         position: "absolute",
         top: "10%"
+    },
+    input: {
+        width: "100%",
+        padding: 10,
+        borderWidth: 1,
+        borderRadius: 5,
+        marginBottom: 10,
+    },
+    modalBackground: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0,0,0,0.5)",
+    },
+    modalButtons: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        width: "100%",
+    },
+    modalContainer: {
+        width: 300,
+        padding: 20,
+        backgroundColor: "white",
+        borderRadius: 10,
+        alignItems: "center",
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: "bold",
+        marginBottom: 10,
     },
     navbar: {
         flexDirection: "row",
