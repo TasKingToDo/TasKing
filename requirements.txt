@@ -4,3 +4,5 @@ npm install react-native-popover-view
 npm install @react-navigation/native
 npx expo install firebase
 npx expo install react-native-screens react-native-safe-area-context
+npm i @react-native-picker/picker
+npm install react-native-gesture-handler react-native-reanimated react-native-screens react-native-safe-area-context react-native-svg
