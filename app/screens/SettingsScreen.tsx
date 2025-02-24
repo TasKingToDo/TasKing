@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { Button, Text, View, Switch, TouchableOpacity, StyleSheet } from 'react-native';
-import { SettingsContext } from '../SettingsContext';
+import { SettingsContext } from '../config/SettingsContext';
 import colors from '../config/colors';
 import { getAuth, signOut } from 'firebase/auth';
 

@@ -1,12 +1,14 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Text, View, StyleSheet, FlatList, Animated, Pressable} from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { TruncatedTextView } from 'react-native-truncated-text-view';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, updateDoc, query, where } from "firebase/firestore";
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import colors from '../config/colors';
-import { SettingsContext } from '../SettingsContext';
+import { SettingsContext } from '../config/SettingsContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
+import { authContext } from '../config/authContext';
 
 
 type Task = {
@@ -22,14 +24,20 @@ type Task = {
 
 const TaskScreen = () => {
     const settings = useContext(SettingsContext);
+    const { user } = useContext(authContext);
     const [tasks,setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedTask, setExpandedTask] = useState<string | null>(null);
+    const [sortOption, setSortOption] = useState<string>('createdAt');
+    const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
 
     useEffect(() => {
+        if (!user) return;
+
         const fetchTasks = async () => {
             try {
-                const querySnapshot = await getDocs(collection(FIREBASE_DB, "tasks"));
+                const q = query(collection(FIREBASE_DB, "tasks"), where("userId", "==", user.uid));
+                const querySnapshot = await getDocs(q);
                 let fetchedTasks: Task[] = querySnapshot.docs.map(doc => {
                     let data = JSON.parse(JSON.stringify(doc.data()));
 
@@ -44,17 +52,11 @@ const TaskScreen = () => {
                     };
                 });
 
-                // Process recurring tasks
-                let allTasks = [];
-                for (let task of fetchedTasks) {
-                    if (task.repeat && task.repeat !== "none") {
-                        allTasks = [...allTasks, ...generateRecurringTasks(task)];
-                    } else {
-                        allTasks.push(task);
-                    }
-                }
+                let allTasks = fetchedTasks.flatMap(task =>
+                    task.repeat && task.repeat !== "none" ? generateRecurringTasks(task) : task
+                );
 
-                setTasks(allTasks);
+                setTasks(sortTasks(allTasks, sortOption));
             } catch (error) {
                 console.error("Error fetching tasks:", error);
             } finally {
@@ -63,51 +65,41 @@ const TaskScreen = () => {
         };
 
         fetchTasks();
-    }, []);
+    }, [sortOption]);
 
     const handleDeleteTask = async (taskId: string) => {
         try {
-            console.log(`Deleting task: ${taskId}`);
-    
-            const taskRef = doc(FIREBASE_DB, "tasks", taskId);
-    
-            // ✅ Delete from Firestore
-            await deleteDoc(taskRef);
-    
-            // ✅ Log success
-            console.log(`Task ${taskId} successfully deleted from Firebase`);
-    
-            // ✅ Fetch latest tasks from Firebase after deletion
+            await deleteDoc(doc(FIREBASE_DB, "tasks", taskId));
             const querySnapshot = await getDocs(collection(FIREBASE_DB, "tasks"));
-            setTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
-    
+            setTasks(sortTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)), sortOption));
         } catch (error) {
-            console.error("❌ Error deleting task:", error);
+            console.error("Error deleting task:", error);
         }
     };
     
 
     const handleCompleteTask = async (task: Task) => {
         try {
-            console.log(`Toggling complete for task: ${task.id} - Current status: ${task.completed}`);
-    
             const taskRef = doc(FIREBASE_DB, "tasks", task.id);
             const updatedStatus = !task.completed;
-    
-            // ✅ Update Firestore
             await updateDoc(taskRef, { completed: updatedStatus });
-    
-            // ✅ Log success
-            console.log(`Task ${task.id} updated to completed: ${updatedStatus}`);
-    
-            // ✅ Fetch latest tasks from Firebase to ensure update is reflected
+
             const querySnapshot = await getDocs(collection(FIREBASE_DB, "tasks"));
-            setTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
-    
+            setTasks(sortTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)), sortOption));
         } catch (error) {
-            console.error("❌ Error marking task as complete:", error);
+            console.error("Error marking task as complete:", error);
         }
-    };        
+    };
+    
+    const sortTasks = (tasks: Task[], option: string): Task[] => {
+        return [...tasks].sort((a, b) => {
+            if (option === 'name') return a.name.localeCompare(b.name);
+            if (option === 'date') return new Date(a.date).getTime() - new Date(b.date).getTime();
+            if (option === 'createdAt') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            if (option === 'reverseCreatedAt') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            return 0;
+        });
+    };
     
     const formatRepeat = (repeat) => {
         if (!repeat || repeat === "none") return "";
@@ -119,19 +111,15 @@ const TaskScreen = () => {
         return repeat.charAt(0).toUpperCase() + repeat.slice(1);
     };
 
-    const renderLeftActions = (progress, dragX, taskId) => (
+    const renderLeftActions = (_progress: any, _dragX: any, taskId: string) => (
         <Animated.View style={styles.deleteContainer}>
-            <Pressable onPress={() => handleDeleteTask(taskId)}>
-                <Text style={styles.deleteText}>Delete</Text>
-            </Pressable>
+            <Text style={styles.deleteText}>Deleting...</Text>
         </Animated.View>
     );
-    
-    const renderRightActions = (progress, dragX, task) => (
+
+    const renderRightActions = (_progress: any, _dragX: any, task: Task) => (
         <Animated.View style={styles.completeContainer}>
-            <Pressable onPress={() => handleCompleteTask(task)}>
-                <Text style={styles.completeText}>{task.completed ? "Undo" : "Complete"}</Text>
-            </Pressable>
+            <Text style={styles.completeText}>{task.completed ? "Undoing..." : "Completing..."}</Text>
         </Animated.View>
     );
      
@@ -141,11 +129,26 @@ const TaskScreen = () => {
     };
     
     
-    if (!settings) return null;
+    if (!settings || !user) return null;
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaProvider>
                 <SafeAreaView>
+                    {tasks.length > 0 && (
+                        <View style={styles.sortContainer}>
+                            <Text style={styles.sortLabel}>Sort By:</Text>
+                            <Picker
+                                selectedValue={sortOption}
+                                onValueChange={(itemValue) => setSortOption(itemValue)}
+                                style={styles.sortPicker}
+                            >
+                                <Picker.Item label="Name" value="name" />
+                                <Picker.Item label="Date" value="date" />
+                                <Picker.Item label="Time Created (Oldest First)" value="createdAt" />
+                                <Picker.Item label="Time Created (Newest First)" value="reverseCreatedAt" />
+                            </Picker>
+                        </View>
+                    )}
                     {tasks.length === 0 ? (
                         <Text style={styles.noTasksText}>No tasks available</Text>
                     ) : (
@@ -154,6 +157,13 @@ const TaskScreen = () => {
                             keyExtractor={(item) => item.id}
                             renderItem={({ item }) => (
                                 <Swipeable
+                                ref={(ref) => ref && (swipeableRefs[item.id] = ref)}
+                                onSwipeableOpen={(direction) => {
+                                    if (direction === 'left') handleDeleteTask(item.id);
+                                    if (direction === 'right') handleCompleteTask(item);
+
+                                    setTimeout(() => swipeableRefs[item.id]?.close(), 50);
+                                }}
                                     renderLeftActions={(progress, dragX) => renderLeftActions(progress, dragX, item.id)}
                                     renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item)}
                                 >
@@ -259,7 +269,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold' 
     },
     completedTask: {
-        backgroundColor: '#d4edda', // Light green for completed tasks
+        backgroundColor: '#d4edda',
     },
     deleteContainer: {
         backgroundColor: 'red',
@@ -278,6 +288,20 @@ const styles = StyleSheet.create({
         fontSize: 30,
         fontWeight: "bold",
     },
+    sortContainer: { 
+        flexDirection: "row", 
+        alignItems: "center", 
+        padding: 10,
+    },
+    sortLabel: { 
+        fontSize: 16, 
+        fontWeight: "bold", 
+        marginRight: 10 
+    },
+    sortPicker: { 
+        width: 200, 
+        height: 50,
+    },
     taskContainer: {
         padding: 12,
         marginVertical: 4,
@@ -287,7 +311,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowOffset: { width: 0, height: 2 },
         shadowRadius: 4,
-        elevation: 2, // For Android shadow
+        elevation: 2,
     },
     taskDetails: {
         fontSize: 14,

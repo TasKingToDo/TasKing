@@ -8,7 +8,7 @@ import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import colors from '../config/colors';
-import { SettingsContext } from '../SettingsContext';
+import { SettingsContext } from '../config/SettingsContext';
 import bodyData from "../assets/shopdata/bodyData";
 import shirtData from "../assets/shopdata/shirtData";
 import pantsData from "../assets/shopdata/pantsData";

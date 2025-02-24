@@ -4,7 +4,7 @@ import { useSharedValue } from 'react-native-reanimated';
 import { Entypo } from '@expo/vector-icons';
 import { collection, doc, getDoc } from "firebase/firestore";
 import colors from '../config/colors';
-import { SettingsContext } from '../SettingsContext';
+import { SettingsContext } from '../config/SettingsContext';
 import CustomMenu from '../config/customMenu';
 import { FIREBASE_DB, FIREBASE_AUTH } from '@/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';

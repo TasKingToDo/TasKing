@@ -4,7 +4,7 @@ import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { FIREBASE_APP } from '../../firebaseConfig'
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 import colors from '../config/colors';
-import { SettingsContext } from '../SettingsContext';
+import { SettingsContext } from '../config/SettingsContext';
 
 const OpeningScreen = ({navigation}) => {
     const settings = useContext(SettingsContext);

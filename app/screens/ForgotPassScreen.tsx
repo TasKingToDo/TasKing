@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { View, StyleSheet, Image, Button, TextInput } from 'react-native';
 import colors from '../config/colors';
-import { SettingsContext } from '../SettingsContext';
+import { SettingsContext } from '../config/SettingsContext';
 
 function ForgotPassScreen({navigation}) {
     const settings = useContext(SettingsContext);

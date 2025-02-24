@@ -4,14 +4,16 @@ import { useSharedValue } from 'react-native-reanimated';
 import { addDoc, collection, getDocs } from "firebase/firestore";
 import { Picker } from '@react-native-picker/picker';
 import colors from '../config/colors';
-import { SettingsContext } from '../SettingsContext';
+import { SettingsContext } from '../config/SettingsContext';
 import CustomMenu from '../config/customMenu';
 import { FIREBASE_DB } from '@/firebaseConfig';
+import { authContext } from '../config/authContext';
 
 const { height } = Dimensions.get("window");
 const MID_POSITION = 0;
 
 const CreateTaskScreen = ({navigation}) => {
+    const { user } = useContext(authContext);
     const [name, setName] = useState('');
     const [date, setDate] = useState('');
     const [dateError, setDateError] = useState('');
@@ -23,20 +25,17 @@ const CreateTaskScreen = ({navigation}) => {
     const translateY = useSharedValue(MID_POSITION);
     const settings = useContext(SettingsContext);
 
-    if (!settings) return null;
+    if (!settings || !user) return null;
 
     const handleDateChange = (text) => {
-        // Allow only numbers and dashes
         let formattedText = text.replace(/[^0-9-]/g, '');
 
-        // Auto-insert dashes at correct positions
         if (formattedText.length === 4 || formattedText.length === 7) {
             formattedText += '-';
         }
 
         setDate(formattedText);
 
-        // Validate format (YYYY-MM-DD)
         if (/^\d{4}-\d{2}-\d{2}$/.test(formattedText)) {
             setDateError('');
         } else {
@@ -45,25 +44,20 @@ const CreateTaskScreen = ({navigation}) => {
     };
 
     const handleTimeChange = (text) => {
-        // Allow only numbers, ":", and space
         let formattedText = text.replace(/[^0-9:APM ]/gi, '');
     
-        // Auto-format while typing
         if (formattedText.length === 2 && !formattedText.includes(':')) {
             formattedText += ':';
         }
     
-        // Ensure space before AM/PM
         if (formattedText.length === 5 && !formattedText.includes(' ')) {
             formattedText += ' ';
         }
     
-        // Convert to uppercase for "am/pm"
         formattedText = formattedText.toUpperCase();
     
         setTime(formattedText);
     
-        // Validate format (HH:MM AM/PM)
         if (/^(0[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/.test(formattedText)) {
             setTimeError('');
         } else {
@@ -75,14 +69,15 @@ const CreateTaskScreen = ({navigation}) => {
         try {
             let repeatData = repeat === "custom"
                 ? { type: customRepeatType, interval: parseInt(customRepeatValue) }
-                : repeat; // Store as object only for "Custom"
+                : repeat;
             
                 await addDoc(collection(FIREBASE_DB, "tasks"), {
+                userId: user.uid,
                 name: name,
                 date: date,
                 time: time,
                 repeat: repeatData,
-                createdAt: new Date().toISOString(), // Timestamp for sorting
+                createdAt: new Date().toISOString(),
             });
             alert("Task has been created!");
             navigation.navigate('Home');

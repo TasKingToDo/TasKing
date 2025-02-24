@@ -1,14 +1,17 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { View, StyleSheet, Pressable, Text, Dimensions } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 import { Entypo, Feather } from "@expo/vector-icons";
+import { collection, doc, getDoc } from "firebase/firestore";
 import colors from '../config/colors';
-import { SettingsContext } from '../SettingsContext';
+import { SettingsContext } from '../config/SettingsContext';
 import TaskScreen from './TaskScreen';
 import ShopScreen from './ShopScreen';
 import CustomMenu from '../config/customMenu';
+import { FIREBASE_DB, FIREBASE_AUTH } from '@/firebaseConfig';
+import { authContext } from '../config/authContext';
 
 const { height } = Dimensions.get("window");
 const NAV_BAR_HEIGHT = 75;
@@ -19,6 +22,26 @@ const BOTTOM_EXPANDED = height / 1.95 - NAV_BAR_HEIGHT;
 const HomeScreen = ({navigation}) => {
     const translateY = useSharedValue(MID_POSITION);
     const settings = useContext(SettingsContext);
+    const { user } = useContext(authContext);
+    const [level, setLevel] = useState(0);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const fetchLevel = async () => {
+            try {
+                const userDocRef = doc(FIREBASE_DB, "users", user.uid); // Use UID instead of hardcoded email
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                    setLevel(userDoc.data()?.level || 0);
+                }
+            } catch (error) {
+                console.error("Error fetching user level: ", error);
+            }
+        };
+
+        fetchLevel();
+    }, [user]);
 
     if (!settings) return null;
 
@@ -100,7 +123,7 @@ const HomeScreen = ({navigation}) => {
                         <View style={styles.levelBar}>
                             <Entypo name="progress-one" size={70} color={settings.darkMode ? colors.white : colors.black} />
                             <View style={{ width: 20 }}></View>
-                            <Text style={{ fontSize: 30, color: settings.darkMode ? colors.white : colors.black }}>Lvl. 25</Text>
+                            <Text style={{ fontSize: 30, color: settings.darkMode ? colors.white : colors.black }}>Lvl. {level}</Text>
                         </View>
                         <Pressable style={styles.createTask} onPress={() => navigation.navigate('Create Task')}>
                             <Feather name="plus-circle" size={70} color={settings.darkMode ? colors.white : colors.black} />
