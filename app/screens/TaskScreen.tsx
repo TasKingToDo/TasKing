@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, FlatList, Animated, Pressable} from 'react-nati
 import { Picker } from '@react-native-picker/picker';
 import { TruncatedTextView } from 'react-native-truncated-text-view';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, deleteDoc, doc, getDocs, updateDoc, query, where } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, updateDoc, query, where, getDoc } from "firebase/firestore";
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
@@ -32,62 +32,99 @@ const TaskScreen = () => {
     const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
 
     useEffect(() => {
+        fetchUserTasks();
+    }, [user, sortOption]);
+
+    const fetchUserTasks = async () => {
         if (!user) return;
 
-        const fetchTasks = async () => {
-            try {
-                const q = query(collection(FIREBASE_DB, "tasks"), where("userId", "==", user.uid));
-                const querySnapshot = await getDocs(q);
-                let fetchedTasks: Task[] = querySnapshot.docs.map(doc => {
-                    let data = JSON.parse(JSON.stringify(doc.data()));
+        try {
+            const q = query(collection(FIREBASE_DB, "tasks"), where("userId", "==", user.uid));
+            const querySnapshot = await getDocs(q);
+            let fetchedTasks: Task[] = querySnapshot.docs.map(doc => {
+                let data = doc.data();
+                return {
+                    id: doc.id,
+                    name: data.name || "Unnamed Task",
+                    date: data.date || "No Date",
+                    time: data.time || "No Time",
+                    repeat: data.repeat || "none",
+                    completed: data.completed ?? false,
+                    createdAt: data.createdAt || "No Timestamp",
+                };
+            });
 
-                    return {
-                        id: doc.id,
-                        name: data["name"] ? String(data["name"].trim()) : "Unnamed Task",
-                        date: data["date"] ? String(data["date"].trim()) : "No Date",
-                        time: data["time"] ? String(data["time"].trim()) : "No Time",
-                        repeat: data["repeat"] ? data["repeat"] : "none",
-                        completed: data.completed ?? false,
-                        createdAt: data["createdAt"] ? String(data["createdAt"]) : "No Timestamp",
-                    };
-                });
-
-                let allTasks = fetchedTasks.flatMap(task =>
-                    task.repeat && task.repeat !== "none" ? generateRecurringTasks(task) : task
-                );
-
-                setTasks(sortTasks(allTasks, sortOption));
-            } catch (error) {
-                console.error("Error fetching tasks:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchTasks();
-    }, [sortOption]);
+            setTasks(sortTasks(fetchedTasks, sortOption));
+        } catch (error) {
+            console.error("Error fetching tasks:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleDeleteTask = async (taskId: string) => {
         try {
             await deleteDoc(doc(FIREBASE_DB, "tasks", taskId));
-            const querySnapshot = await getDocs(collection(FIREBASE_DB, "tasks"));
-            setTasks(sortTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)), sortOption));
+            await fetchUserTasks(); // Refresh tasks after deleting
         } catch (error) {
             console.error("Error deleting task:", error);
         }
     };
-    
 
     const handleCompleteTask = async (task: Task) => {
+        if (!user) return;
+    
         try {
             const taskRef = doc(FIREBASE_DB, "tasks", task.id);
-            const updatedStatus = !task.completed;
-            await updateDoc(taskRef, { completed: updatedStatus });
-
-            const querySnapshot = await getDocs(collection(FIREBASE_DB, "tasks"));
-            setTasks(sortTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)), sortOption));
+            const userRef = doc(FIREBASE_DB, "users", user.uid);
+    
+            // Fetch task data to get XP and balance rewards
+            const taskSnap = await getDoc(taskRef);
+            if (!taskSnap.exists()) {
+                console.error("Task not found!");
+                return;
+            }
+            const taskData = taskSnap.data();
+            const taskXp = taskData.xp || 0;  // Default XP if not set
+            const taskBalance = taskData.balance || 0;  // Default balance if not set
+    
+            // Fetch user data to update XP and balance
+            const userSnap = await getDoc(userRef);
+            if (!userSnap.exists()) {
+                console.error("User not found!");
+                return;
+            }
+            const userData = userSnap.data();
+            const isTaskCompleted = task.completed; // Check current completion state
+    
+            // Determine new XP and balance
+            const newXp = isTaskCompleted ? (userData.xp || 0) - taskXp : (userData.xp || 0) + taskXp;
+            const newBalance = isTaskCompleted ? (userData.balance || 0) - taskBalance : (userData.balance || 0) + taskBalance;
+    
+            // Prevent negative XP or balance
+            const updatedXp = Math.max(0, newXp);
+            const updatedBalance = Math.max(0, newBalance);
+    
+            // Update user's XP and balance in Firestore
+            await updateDoc(userRef, {
+                xp: updatedXp,
+                balance: updatedBalance
+            });
+    
+            // Toggle task completion state
+            await updateDoc(taskRef, { completed: !task.completed });
+    
+            // Refresh tasks to reflect completion/undo
+            await fetchUserTasks();
+    
+            // Show alert based on action
+            if (isTaskCompleted) {
+                alert(`Task undone! You lost ${taskXp} XP and ${taskBalance} coins.`);
+            } else {
+                alert(`Task completed! You earned ${taskXp} XP and ${taskBalance} coins.`);
+            }
         } catch (error) {
-            console.error("Error marking task as complete:", error);
+            console.error("Error updating task:", error);
         }
     };
     

@@ -1,7 +1,8 @@
 import React, { useState, useContext } from 'react';
 import { StyleSheet, View, Button, Image, TextInput, Pressable, Text } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { FIREBASE_APP } from '../../firebaseConfig'
+import { FIREBASE_APP, FIREBASE_DB } from '@/firebaseConfig'
+import { collection, doc, setDoc } from "firebase/firestore";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
@@ -12,18 +13,19 @@ const OpeningScreen = ({navigation}) => {
     const [showSignUp, setShowSignUp] = useState(false);
     var [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [username, setUsername] = useState('');
     const auth = getAuth(FIREBASE_APP);
 
     const toggleLogin = () => {
         setShowLogin(!showLogin);
-        if (showSignUp == true) {
+        if (showSignUp) {
             setShowSignUp(false)
         }
     }
 
     const toggleSignup = () => {
         setShowSignUp(!showSignUp);
-        if (showLogin == true) {
+        if (showLogin) {
             setShowLogin(false)
         }
     }
@@ -39,18 +41,32 @@ const OpeningScreen = ({navigation}) => {
         }
       };
 
-    const signUp = async () => {
+      const signUp = async () => {
         try {
+            // Create a user in Firebase Authentication
             const response = await createUserWithEmailAndPassword(auth, email, password);
-            console.log(response);
-            alert('sign up is probably successful')
-            setShowLogin(false)
-            setShowSignUp(false)
+            const user = response.user;
+
+            // Store additional user data in Firestore
+            await setDoc(doc(FIREBASE_DB, "users", user.uid), {
+                Friends: [],
+                balance: 0,
+                email: email,
+                level: 0,
+                owneditems: [],
+                pfp: "",
+                username: username || "NewUser",
+                xp: 1
+            });
+
+            alert('Sign-up successful!');
+            setShowLogin(false);
+            setShowSignUp(false);
         } catch (error) {
             console.log(error);
-            alert('sign up failed: ' + error.message)
+            alert('Sign-up failed: ' + error.message);
         }
-    }
+    };
 
     return (
         <SafeAreaProvider style={styles.background}>
