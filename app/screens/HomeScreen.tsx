@@ -3,8 +3,9 @@ import { View, StyleSheet, Pressable, Text, Dimensions } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
-import { Entypo, Feather } from "@expo/vector-icons";
-import { collection, doc, getDoc } from "firebase/firestore";
+import { Feather } from "@expo/vector-icons";
+import { doc, onSnapshot } from "firebase/firestore";
+import * as Progress from 'react-native-progress';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
 import TaskScreen from './TaskScreen';
@@ -23,26 +24,54 @@ const HomeScreen = ({navigation}) => {
     const translateY = useSharedValue(MID_POSITION);
     const settings = useContext(SettingsContext);
     const { user } = useContext(authContext);
+    const [xp, setXp] = useState(0);
     const [level, setLevel] = useState(0);
+    const [xpProgress, setXpProgress] = useState(0);
+
+    const calculateLevel = (xp) => {
+        let level = 0;
+        let xpThreshold = 0; // Total XP needed to reach this level
+        let nextThreshold = 20; // Next level XP requirement
+    
+        while (xp >= xpThreshold + nextThreshold) {
+            xpThreshold += nextThreshold;
+            level++;
+            nextThreshold += 20; // Each level requires 10 more XP
+        }
+    
+        return { level, xpThreshold, nextThreshold };
+    };
+    
 
     useEffect(() => {
         if (!user) return;
-
-        const fetchLevel = async () => {
-            try {
-                const userDocRef = doc(FIREBASE_DB, "users", user.uid); // Use UID instead of hardcoded email
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists()) {
-                    setLevel(userDoc.data()?.level || 0);
-                }
-            } catch (error) {
-                console.error("Error fetching user level: ", error);
+    
+        const userDocRef = doc(FIREBASE_DB, "users", user.uid);
+    
+        const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const userData = docSnap.data();
+                const userXp = userData?.xp || 0;
+                setXp(userXp);
+    
+                // 🔥 Fix XP normalization
+                const { level, xpThreshold, nextThreshold } = calculateLevel(userXp);
+                setLevel(level);
+    
+                // XP gained since last level-up
+                const xpIntoCurrentLevel = userXp - xpThreshold;
+    
+                // Ensure progress starts at 0% for XP = 0
+                const xpProgress = nextThreshold > 0 ? Math.max(0, Math.min(1, xpIntoCurrentLevel / nextThreshold)) : 0;
+    
+                setXpProgress(xpProgress);
             }
-        };
-
-        fetchLevel();
+        });
+    
+        return () => unsubscribe();
     }, [user]);
-
+    
+    
     if (!settings) return null;
 
     const gesture = Gesture.Pan()
@@ -120,10 +149,24 @@ const HomeScreen = ({navigation}) => {
                     </Animated.View>
                     <Animated.View style={[styles.navbar, navbarAnimatedStyle, { backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]}>
                         <CustomMenu navbarVisible={navbarVisible} />
-                        <View style={styles.levelBar}>
-                            <Entypo name="progress-one" size={70} color={settings.darkMode ? colors.white : colors.black} />
-                            <View style={{ width: 20 }}></View>
-                            <Text style={{ fontSize: 30, color: settings.darkMode ? colors.white : colors.black }}>Lvl. {level}</Text>
+                        <View style={styles.levelContainer}>
+                            <View style={styles.progressBarContainer}>
+                                <Progress.Bar 
+                                    progress={xpProgress}
+                                    width={150}
+                                    height={30}
+                                    color={colors.accept}
+                                    borderColor={colors.black}
+                                />
+
+                                <Text style={styles.progressText}>
+                                    {Math.round(xpProgress * 100)}%
+                                </Text>
+                            </View>
+                            <View style={{width: "7%"}} />
+                            <Text style={[styles.levelText, { color: settings.darkMode ? colors.white : colors.black }]}>
+                                Lvl. {level}
+                            </Text>
                         </View>
                         <Pressable style={styles.createTask} onPress={() => navigation.navigate('Create Task')}>
                             <Feather name="plus-circle" size={70} color={settings.darkMode ? colors.white : colors.black} />
@@ -177,11 +220,16 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
     },
-    levelBar: {
+    levelContainer: {
         width: "65%",
         justifyContent: "center",
         alignItems: "center",
         flexDirection: "row",
+    },
+    levelText: {
+        fontSize: 25,
+        fontWeight: "bold",
+        marginBottom: 5,
     },
     middleBar: {
         width: "40%",
@@ -207,6 +255,17 @@ const styles = StyleSheet.create({
         borderTopColor: colors.black,
         overflow: "visible",
     },
+    progressBarContainer: {
+        position: "relative",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    progressText: {
+        position: "absolute",
+        fontSize: 20,
+        fontWeight: "bold",
+        color: colors.black,
+    },
     shopContainer: {
         position: "absolute",
         top: "50%",
@@ -214,6 +273,10 @@ const styles = StyleSheet.create({
         right: 0,
         height: "50%",
     },
+    xpText: {
+        fontSize: 15,
+        marginTop: 5,
+    }
 })
 
 export default HomeScreen;

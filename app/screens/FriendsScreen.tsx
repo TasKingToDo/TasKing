@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Button, Text, View, StyleSheet, Pressable, Dimensions, FlatList, TextInput, Alert, Modal} from 'react-native';
-import { useSharedValue } from 'react-native-reanimated';
+import { useSharedValue, useDerivedValue} from 'react-native-reanimated';
 import { Entypo } from '@expo/vector-icons';
 import { collection, doc, getDoc, updateDoc, query, where, getDocs } from "firebase/firestore";
 import colors from '../config/colors';
@@ -21,7 +21,7 @@ const FriendsScreen = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
     const translateY = useSharedValue(MID_POSITION);
-    const navbarVisible = translateY.value <= height * 0.15;
+    const navbarVisible = useDerivedValue(() => translateY.value <= height * 0.15);
     const settings = useContext(SettingsContext);
 
     useEffect(() => {
@@ -118,20 +118,20 @@ const FriendsScreen = ({ navigation }) => {
             </View>
             <View style={styles.friendList}>
                 {friends.length === 0 ? (
-                    <Text style={styles.noFriendsText}>You have no friends</Text>
+                    <Text style={[styles.noFriendsText, { color: settings.darkMode ? colors.white : colors.black }]}>You have no friends</Text>
                 ) : (
                     <FlatList
                     data={friends}
                     keyExtractor={(item, index) => index.toString()}
                     renderItem={({ item }) => (
                         <Text style={{ color: settings.darkMode ? colors.white : colors.black, fontSize: 20, padding: 10 }}>
-                            {item}
+                            {item.username}
                         </Text>
                     )}
                 />)}
             </View>
             <View style={[styles.navbar, {backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]}>
-                <CustomMenu navbarVisible={navbarVisible}/>
+                <CustomMenu navbarVisible={navbarVisible.value}/>
                 <View style={{width: "65%"}}></View>
                 <Pressable style={styles.addFriend} onPress={() => setModalVisible(true)}>
                     <Entypo name="add-user" size={70} color={settings.darkMode ? colors.white : colors.black} />

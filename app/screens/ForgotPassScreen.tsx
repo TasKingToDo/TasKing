@@ -1,17 +1,27 @@
 import React, { useState, useContext } from 'react';
-import { View, StyleSheet, Image, Button, TextInput } from 'react-native';
+import { View, StyleSheet, Image, Button, TextInput, Alert} from 'react-native';
+import auth from 'firebase/auth';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
 
 function ForgotPassScreen({navigation}) {
     const settings = useContext(SettingsContext);
-    var [email, setEmail] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const passchange = () => {
-        alert('Your password has been changed')
-        navigation.navigate('Welcome')
-    }
+    const resetPassword = async () => {
+        try {
+            if (!email) {
+                Alert.alert("Error", "Please enter your email");
+                return;
+            }
+            await auth().sendPasswordResetEmail(email);
+            Alert.alert("Success", "Check your email for password reset instructions.");
+            navigation.navigate('Welcome');
+        } catch (error) {
+            Alert.alert("Error", error.message);
+        }
+    };
 
     return (
         <View style={styles.background}>
