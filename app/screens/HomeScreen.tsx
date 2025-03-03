@@ -4,21 +4,23 @@ import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import Toast from 'react-native-toast-message';
 import * as Progress from 'react-native-progress';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
 import TaskScreen from './TaskScreen';
 import ShopScreen from './ShopScreen';
 import CustomMenu from '../config/customMenu';
-import { FIREBASE_DB, FIREBASE_AUTH } from '@/firebaseConfig';
+import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '../config/authContext';
+import toastConfig from '../config/toastConfig';
 
 const { height } = Dimensions.get("window");
 const NAV_BAR_HEIGHT = 75;
 const MID_POSITION = 0;
-const TOP_EXPANDED = -height / 1.87 + NAV_BAR_HEIGHT;
-const BOTTOM_EXPANDED = height / 1.95 - NAV_BAR_HEIGHT;
+const TOP_EXPANDED = -height / 2.02 + NAV_BAR_HEIGHT;
+const BOTTOM_EXPANDED = height / 1.8 - NAV_BAR_HEIGHT;
 
 const HomeScreen = ({navigation}) => {
     const translateY = useSharedValue(MID_POSITION);
@@ -28,49 +30,47 @@ const HomeScreen = ({navigation}) => {
     const [level, setLevel] = useState(0);
     const [xpProgress, setXpProgress] = useState(0);
 
-    const calculateLevel = (xp) => {
+    const calculateLevel = (xp: number) => {
         let level = 0;
-        let xpThreshold = 0; // Total XP needed to reach this level
-        let nextThreshold = 20; // Next level XP requirement
+        let xpThreshold = 0;
+        let nextThreshold = 20;
     
         while (xp >= xpThreshold + nextThreshold) {
             xpThreshold += nextThreshold;
             level++;
-            nextThreshold += 20; // Each level requires 10 more XP
+            nextThreshold += 20;
         }
     
         return { level, xpThreshold, nextThreshold };
     };
-    
 
     useEffect(() => {
         if (!user) return;
-    
+
         const userDocRef = doc(FIREBASE_DB, "users", user.uid);
-    
+
         const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 const userData = docSnap.data();
                 const userXp = userData?.xp || 0;
                 setXp(userXp);
-    
-                // 🔥 Fix XP normalization
+
                 const { level, xpThreshold, nextThreshold } = calculateLevel(userXp);
+                
                 setLevel(level);
-    
-                // XP gained since last level-up
+
                 const xpIntoCurrentLevel = userXp - xpThreshold;
-    
-                // Ensure progress starts at 0% for XP = 0
                 const xpProgress = nextThreshold > 0 ? Math.max(0, Math.min(1, xpIntoCurrentLevel / nextThreshold)) : 0;
-    
                 setXpProgress(xpProgress);
+
+                if (userData.level !== level) {
+                    updateDoc(userDocRef, { level: level })
+                }
             }
         });
-    
+
         return () => unsubscribe();
     }, [user]);
-    
     
     if (!settings) return null;
 
@@ -78,34 +78,45 @@ const HomeScreen = ({navigation}) => {
         .onUpdate((event) => {
             translateY.value = event.translationY;
         })
-        .onEnd(() => {
+        .onEnd((event) => {
             let targetPosition = MID_POSITION;
-            if (translateY.value < -height * 0.15) {
-                targetPosition = TOP_EXPANDED;
-            } else if (translateY.value > height * 0.15) {
-                targetPosition = BOTTOM_EXPANDED;
+            const velocityThreshold = 1000; 
+            const translationThreshold = height * 0.15;
+        
+            if (event.velocityY < -velocityThreshold || translateY.value < -translationThreshold) {
+                if (translateY.value > MID_POSITION) {
+                    targetPosition = MID_POSITION; 
+                } else {
+                    targetPosition = Math.max(TOP_EXPANDED, -height / 2.02 + NAV_BAR_HEIGHT); // Ensure it doesn't go too high
+                }
+            } else if (event.velocityY > velocityThreshold || translateY.value > translationThreshold) {
+                if (translateY.value < MID_POSITION) {
+                    targetPosition = MID_POSITION;
+                } else {
+                    targetPosition = Math.min(BOTTOM_EXPANDED, height / 1.8 - NAV_BAR_HEIGHT); // Ensure it stops at the navbar
+                }
             }
+        
             translateY.value = withSpring(targetPosition, {
-                damping: 15, // Adds a smooth effect
-                stiffness: 120, // Makes it feel natural
-                mass: 0.8, // Adjusts the weight of the transition
-                velocity: 5, // Helps with natural momentum
-                restSpeedThreshold: 0.5, // Smoothly stops instead of snapping
-                restDisplacementThreshold: 0.5, // Prevents abrupt stopping
+                damping: 20,
+                stiffness: 100,
+                velocity: event.velocityY / 2,
+                restSpeedThreshold: 0.3,
+                restDisplacementThreshold: 0.3,
             });
-        });
+        });        
     
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [{ translateY: translateY.value }]
     }));
     
-    const navbarVisible = translateY.value <= height * 0.15; // Track navbar visibility
+    const navbarVisible = translateY.value <= height * 0.15;
 
     const navbarAnimatedStyle = useAnimatedStyle(() => ({
         opacity: translateY.value > height * 0.15 ? 0 : 1,
         pointerEvents: translateY.value > height * 0.15 ? 'none' : 'auto',
-        height: NAV_BAR_HEIGHT, // Keep the navbar layout consistent
-        transform: [{ scale: translateY.value > height * 0.15 ? 0.95 : 1 }], // Subtle scale effect
+        height: NAV_BAR_HEIGHT,
+        transform: [{ scale: translateY.value > height * 0.15 ? 0.95 : 1 }],
     }));
 
     const shopAnimatedStyle = useAnimatedStyle(() => ({
@@ -123,30 +134,38 @@ const HomeScreen = ({navigation}) => {
         bottom: 0,
         display: translateY.value > height * 0.15 ? 'none' : 'flex',
         backgroundColor: colors.primarySoft,
-    }));
+    })); 
     
     return (
         <SafeAreaProvider style={styles.background}>
             <SafeAreaView style={styles.fullScreen}>
                 <GestureHandlerRootView style={styles.fullScreen}>
-                    <View style={styles.imageContainer}>
-                        <ShopScreen />
-                    </View>
-                    <GestureDetector gesture={gesture}>
-                        <Animated.View style={[styles.middleBar, animatedStyle]}>
-                        <View style={styles.dotsContainer}>
-                            <View style={styles.dot} />
-                            <View style={styles.dot} />
-                            <View style={styles.dot} />
+                    {/* Main Content */}
+                    <View style={styles.contentContainer}>
+                        <View style={styles.imageContainer}>
+                            <ShopScreen />
                         </View>
+
+                        <GestureDetector gesture={gesture}>
+                            <Animated.View style={[styles.middleBar, animatedStyle]}>
+                                <View style={styles.dotsContainer}>
+                                    <View style={styles.dot} />
+                                    <View style={styles.dot} />
+                                    <View style={styles.dot} />
+                                </View>
+                            </Animated.View>
+                        </GestureDetector>
+
+                        <Animated.View style={[styles.bottomHalf, taskAnimatedStyle]}>
+                            <TaskScreen />
                         </Animated.View>
-                    </GestureDetector>
-                    <Animated.View style={[styles.bottomHalf, taskAnimatedStyle]}>
-                        <TaskScreen />
-                    </Animated.View>
-                    <Animated.View style={[styles.shopContainer, shopAnimatedStyle]}>
-                        <ShopScreen />
-                    </Animated.View>
+
+                        <Animated.View style={[styles.shopContainer, shopAnimatedStyle]}>
+                            <ShopScreen />
+                        </Animated.View>
+                    </View>
+
+                    {/* Navbar */}
                     <Animated.View style={[styles.navbar, navbarAnimatedStyle, { backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]}>
                         <CustomMenu navbarVisible={navbarVisible} />
                         <View style={styles.levelContainer}>
@@ -156,10 +175,10 @@ const HomeScreen = ({navigation}) => {
                                     width={150}
                                     height={30}
                                     color={colors.accept}
-                                    borderColor={colors.black}
+                                    borderColor={settings.darkMode ? colors.white : colors.black}
                                 />
 
-                                <Text style={styles.progressText}>
+                                <Text style={[styles.progressText, {color: settings.darkMode ? colors.white : colors.black}]}>
                                     {Math.round(xpProgress * 100)}%
                                 </Text>
                             </View>
@@ -174,6 +193,7 @@ const HomeScreen = ({navigation}) => {
                     </Animated.View>
                 </GestureHandlerRootView>
             </SafeAreaView>
+            <Toast config={toastConfig} />
         </SafeAreaProvider>
     );
 };
@@ -181,14 +201,18 @@ const HomeScreen = ({navigation}) => {
 const styles = StyleSheet.create({
     background: {
         flex: 1,
-        justifyContent: "flex-end",
         alignItems: "center",
     },
     bottomHalf: {
         flex: 1,
         width: "100%",
     },
+    contentContainer: {
+        flex: 1,
+        width: "100%",
+    },
     createTask: {
+        height: NAV_BAR_HEIGHT,
         width: "17.5%",
         justifyContent: "center",
         alignItems: "center",
@@ -221,6 +245,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     levelContainer: {
+        height: NAV_BAR_HEIGHT,
         width: "65%",
         justifyContent: "center",
         alignItems: "center",
@@ -243,17 +268,14 @@ const styles = StyleSheet.create({
         zIndex: 10,
     },
     navbar: {
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: NAV_BAR_HEIGHT,
         flexDirection: "row",
-        justifyContent: "center",
+        justifyContent: "space-between",
         alignItems: "center",
-        borderTopWidth: 3,
-        borderTopColor: colors.black,
-        overflow: "visible",
+        borderTopWidth: 2,
+        paddingVertical: 10,
+        height: NAV_BAR_HEIGHT,
+        width: "100%",
+        paddingHorizontal: 15,
     },
     progressBarContainer: {
         position: "relative",
@@ -264,7 +286,6 @@ const styles = StyleSheet.create({
         position: "absolute",
         fontSize: 20,
         fontWeight: "bold",
-        color: colors.black,
     },
     shopContainer: {
         position: "absolute",

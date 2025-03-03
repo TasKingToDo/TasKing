@@ -1,14 +1,17 @@
-﻿import React, { useState, useCallback, memo } from 'react';
+﻿import React, { useState, useCallback, memo, useEffect, useContext } from 'react';
 import {
   View, ScrollView, Image, Text, TextInput,
   Dimensions, StyleSheet, FlatList, TouchableOpacity, Pressable
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { doc, onSnapshot } from 'firebase/firestore';
 //npm install react-native-tab-view
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
+import { FIREBASE_DB } from '@/firebaseConfig';
+import { authContext } from '../config/authContext';
 import bodyData from "../assets/shopdata/bodyData";
 import shirtData from "../assets/shopdata/shirtData";
 import pantsData from "../assets/shopdata/pantsData";
@@ -86,6 +89,27 @@ const ShopScreen = () => {
   const memoizedSetShoesUrl = useCallback((url) => setShoesUrl(url), []);
   const memoizedSetAccUrl = useCallback((url) => setAccUrl(url), []);
 
+  // Fetch Balance from Database
+  const [balance, setBalance] = useState(0);
+  const { user } = useContext(authContext);
+
+  useEffect(() => {
+    const userDocRef = doc(FIREBASE_DB, "users", user.uid); // Adjust collection name if needed
+  
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setBalance(docSnap.data().balance || 0);
+      } else {
+        console.log("No such user document!");
+      }
+    }, (error) => {
+      console.error("Error fetching real-time balance:", error);
+    });
+  
+    return () => unsubscribe(); // Cleanup the listener on component unmount
+  }, []);
+
+
   return (
     <SafeAreaProvider style={styles.background}>
       <SafeAreaView>
@@ -103,7 +127,7 @@ const ShopScreen = () => {
         </View>
         <View style={styles.coinCountContainer}>
           <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/coin.png?alt=media&token=e0a45910-fae9-4c15-a462-19154f025f64"}} style={styles.coinImage} />
-          <Text style={styles.coinText}>100   </Text>
+          <Text style={styles.coinText}>{balance}</Text>
         </View>
         {/* Bottom half of screen (shop portion) */}
         <View style={styles.background}>

@@ -17,6 +17,7 @@ import ForgotPassScreen from "./screens/ForgotPassScreen";
 import { SettingsProvider } from "./config/SettingsContext";
 import { AuthProvider, authContext } from "./config/authContext";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 //creating stack navigator
 const Stack = createNativeStackNavigator();
@@ -54,9 +55,11 @@ const RootNavigator = () => {
 
 const Index = () => {
   return (
-    <AuthProvider>
-      <RootNavigator />
-    </AuthProvider>
+    <GestureHandlerRootView style={{flex: 1}}>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 };
 
