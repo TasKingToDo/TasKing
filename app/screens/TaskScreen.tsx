@@ -1,9 +1,9 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Text, View, StyleSheet, FlatList, Animated, Pressable} from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { TruncatedTextView } from 'react-native-truncated-text-view';
+import Toast from 'react-native-toast-message';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, deleteDoc, doc, getDocs, updateDoc, query, where, getDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, updateDoc, query, where, getDoc, onSnapshot } from "firebase/firestore";
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
@@ -32,40 +32,25 @@ const TaskScreen = () => {
     const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
 
     useEffect(() => {
-        fetchUserTasks();
-    }, [user, sortOption]);
-
-    const fetchUserTasks = async () => {
         if (!user) return;
-
-        try {
-            const q = query(collection(FIREBASE_DB, "tasks"), where("userId", "==", user.uid));
-            const querySnapshot = await getDocs(q);
-            let fetchedTasks: Task[] = querySnapshot.docs.map(doc => {
-                let data = doc.data();
-                return {
-                    id: doc.id,
-                    name: data.name || "Unnamed Task",
-                    date: data.date || "No Date",
-                    time: data.time || "No Time",
-                    repeat: data.repeat || "none",
-                    completed: data.completed ?? false,
-                    createdAt: data.createdAt || "No Timestamp",
-                };
-            });
-
+    
+        const q = query(collection(FIREBASE_DB, "tasks"), where("userId", "==", user.uid));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            let fetchedTasks: Task[] = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }) as Task);
+    
             setTasks(sortTasks(fetchedTasks, sortOption));
-        } catch (error) {
-            console.error("Error fetching tasks:", error);
-        } finally {
             setLoading(false);
-        }
-    };
+        });
+    
+        return () => unsubscribe(); // Clean up listener on unmount
+    }, [user, sortOption]);
 
     const handleDeleteTask = async (taskId: string) => {
         try {
             await deleteDoc(doc(FIREBASE_DB, "tasks", taskId));
-            await fetchUserTasks(); // Refresh tasks after deleting
         } catch (error) {
             console.error("Error deleting task:", error);
         }
@@ -78,55 +63,71 @@ const TaskScreen = () => {
             const taskRef = doc(FIREBASE_DB, "tasks", task.id);
             const userRef = doc(FIREBASE_DB, "users", user.uid);
     
-            // Fetch task data to get XP and balance rewards
             const taskSnap = await getDoc(taskRef);
             if (!taskSnap.exists()) {
                 console.error("Task not found!");
                 return;
             }
-            const taskData = taskSnap.data();
-            const taskXp = taskData.xp || 0;  // Default XP if not set
-            const taskBalance = taskData.balance || 0;  // Default balance if not set
     
-            // Fetch user data to update XP and balance
+            const taskData = taskSnap.data();
+            const taskXp = taskData.xp || 0;
+            const taskBalance = taskData.balance || 0;
+    
             const userSnap = await getDoc(userRef);
             if (!userSnap.exists()) {
                 console.error("User not found!");
                 return;
             }
-            const userData = userSnap.data();
-            const isTaskCompleted = task.completed; // Check current completion state
     
-            // Determine new XP and balance
+            const userData = userSnap.data();
+            const isTaskCompleted = task.completed;
+    
             const newXp = isTaskCompleted ? (userData.xp || 0) - taskXp : (userData.xp || 0) + taskXp;
             const newBalance = isTaskCompleted ? (userData.balance || 0) - taskBalance : (userData.balance || 0) + taskBalance;
     
-            // Prevent negative XP or balance
-            const updatedXp = Math.max(0, newXp);
-            const updatedBalance = Math.max(0, newBalance);
-    
-            // Update user's XP and balance in Firestore
             await updateDoc(userRef, {
-                xp: updatedXp,
-                balance: updatedBalance
+                xp: Math.max(0, newXp),
+                balance: Math.max(0, newBalance),
             });
     
-            // Toggle task completion state
-            await updateDoc(taskRef, { completed: !task.completed });
+            if (!isTaskCompleted && task.repeat && task.repeat !== "none") {
+                let nextDate = new Date(task.date);
+                if (typeof task.repeat === "object") {
+                    if (task.repeat.type === "days") nextDate.setDate(nextDate.getDate() + task.repeat.interval);
+                    if (task.repeat.type === "weeks") nextDate.setDate(nextDate.getDate() + task.repeat.interval * 7);
+                    if (task.repeat.type === "months") nextDate.setMonth(nextDate.getMonth() + task.repeat.interval);
+                } else if (task.repeat === "daily") {
+                    nextDate.setDate(nextDate.getDate() + 1);
+                } else if (task.repeat === "weekly") {
+                    nextDate.setDate(nextDate.getDate() + 7);
+                } else if (task.repeat === "monthly") {
+                    nextDate.setMonth(nextDate.getMonth() + 1);
+                }
     
-            // Refresh tasks to reflect completion/undo
-            await fetchUserTasks();
-    
-            // Show alert based on action
-            if (isTaskCompleted) {
-                alert(`Task undone! You lost ${taskXp} XP and ${taskBalance} coins.`);
+                // Instead of creating a new task, update the existing task with the new date
+                await updateDoc(taskRef, {
+                    date: nextDate.toISOString().split("T")[0],
+                    completed: false, // Reset completion status for the new occurrence
+                });
             } else {
-                alert(`Task completed! You earned ${taskXp} XP and ${taskBalance} coins.`);
+                // Just mark the task as completed
+                await updateDoc(taskRef, { completed: !task.completed });
             }
+    
+            Toast.show({
+                type: isTaskCompleted ? 'info' : 'success',
+                text1: isTaskCompleted ? "Task Undone" : "Task Completed!",
+                text2: isTaskCompleted
+                    ? `You lost ${taskXp} XP and ${taskBalance} coins.`
+                    : `You gained ${taskXp} XP and ${taskBalance} coins.`,
+                position: 'top',
+                visibilityTime: 5000,
+            });            
         } catch (error) {
             console.error("Error updating task:", error);
         }
     };
+    
     
     const sortTasks = (tasks: Task[], option: string): Task[] => {
         return [...tasks].sort((a, b) => {

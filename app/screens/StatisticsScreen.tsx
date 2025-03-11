@@ -1,7 +1,9 @@
 import React, { useContext } from 'react';
-import { Button, Text, View, StyleSheet } from 'react-native';
+import { Button, Text, View, StyleSheet, Platform } from 'react-native';
+import Toast from 'react-native-toast-message';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
+import toastConfig from '../config/toastConfig';
 
 const StatisticsScreen = ({ navigation }) => {
     const settings = useContext(SettingsContext);
@@ -10,42 +12,39 @@ const StatisticsScreen = ({ navigation }) => {
 
     return (
         <View style={[styles.background, { backgroundColor: settings.darkMode ? colors.black : colors.white }]}>
-            <View style={styles.backButton}>
-                <Button title="Back" color={settings.darkMode ? colors.secondary : colors.primary} onPress={() => navigation.navigate('Home')} />
+            {/* Header */}
+            <View style={styles.headerContainer}>
+                <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30 }}>
+                    <Button title="Back" color={settings.darkMode ? colors.secondary : colors.primary} onPress={() => navigation.goBack()} />
+                </View>
+                <View style={{ flex: 1, alignItems: 'center' }}>
+                    <Text style={[styles.headerText, { color: settings.darkMode ? colors.white : colors.black }]}>
+                        Your Stats
+                    </Text>
+                </View>
             </View>
-            <View style={styles.textContainer}>
-                <Text style={[styles.text, { color: settings.darkMode ? colors.white : colors.black}]}>Your Stats</Text>
-            </View>
+            <Toast config={toastConfig}/>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    backButton: {
-        position: "absolute",
-        top: "1%",
-        left: "2%",
-        width: "20%",
-        height: "7%",
-    },
     background: {
         flex: 1,
-        justifyContent: "flex-end",
         alignItems: "center",
     },
-    textContainer: {
-        flex: 1,
-        justifyContent: 'flex-start',
+    headerContainer: {
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         width: '100%',
-        paddingTop: 50,
+        paddingHorizontal: 15,
+        paddingTop: Platform.OS === 'ios' ? 50 : 30,
+        position: 'relative',
     },
-    text: {
+    headerText: {
+        fontSize: 26,
         fontWeight: 'bold',
-        position: "absolute",
-        top: "5%",
-        fontSize: 30,
-        textDecorationLine: "underline",
     },
 });
 
