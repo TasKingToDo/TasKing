@@ -9,6 +9,7 @@ import { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-nati
 import Animated from 'react-native-reanimated';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
+import bodyData from "../assets/shopdata/bodyData";
 
 const OpeningScreen = ({navigation}) => {
     const settings = useContext(SettingsContext);
@@ -71,11 +72,31 @@ const OpeningScreen = ({navigation}) => {
 
             // Store additional user data in Firestore
             await setDoc(doc(FIREBASE_DB, "users", user.uid), {
-                Friends: [],
+                friends: [],
                 balance: 0,
                 email: email,
                 level: 0,
-                owneditems: [],
+              owneditems: [
+                  //all skin tones unlocked by default
+                  [
+                  bodyData[0].imageUrl,
+                  bodyData[1].imageUrl,
+                  bodyData[2].imageUrl,
+                  bodyData[3].imageUrl,
+                    bodyData[4].imageUrl,
+                  ],
+                  //empty array for shirts
+                  [],
+                  //empty array for pants
+                  [],
+                  //empty array for hats
+                  [],
+                  //empty array for shoes
+                  [],
+                  //empty array for accs
+                  [],
+                ],
+                eqippeditems: [bodyData[3].imageUrl],
                 pfp: "",
                 username: username || "NewUser",
                 xp: 0

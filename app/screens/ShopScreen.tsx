@@ -4,7 +4,7 @@ import {
   Dimensions, StyleSheet, FlatList, TouchableOpacity, Pressable
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 //npm install react-native-tab-view
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
@@ -23,9 +23,16 @@ import bgData from "../assets/shopdata/bgData";
 //num of cols on bottom half of screen
 const numColumns = 3;
 
+//defining expected props for ShopMenu component
+type ShopMenuProps = {
+  category: string;
+  updateEquipped: (category: string, imageUrl: string) => void;
+  data: { id: number; imageUrl: string }[];
+};
+
 //Tab menu flatlist base - sent data to display
-const ShopMenu = memo(({ data, setUrl }) => {
-  const handlePress = useCallback((imageUrl) => setUrl(imageUrl), [setUrl]);
+//renders shop and updates equipped items when pressed
+const ShopMenu: React.FC<ShopMenuProps> = memo(({ category, updateEquipped, data=[] }) => {
   return (
     <FlatList
       style={styles.flatListContainer}
@@ -38,7 +45,7 @@ const ShopMenu = memo(({ data, setUrl }) => {
           style={({ pressed }) => ({
             backgroundColor: pressed ? colors.emphasis : colors.primarySoft,
           })}
-          onPress={() => handlePress(item.imageUrl)}>
+            onPress={() => updateEquipped(category, item.imageUrl)}>
           <Image source={{ uri: item.imageUrl }} style={styles.thumbnails} />
           </Pressable>
         </View>
@@ -47,55 +54,16 @@ const ShopMenu = memo(({ data, setUrl }) => {
   );
 });
 
-//Calling flat list function for each tab
-const BodyRoute = ({ setUrl }) => <ShopMenu data={bodyData} setUrl={setUrl} />;
-const ShirtRoute = ({ setUrl }) => <ShopMenu data={shirtData} setUrl={setUrl} />;
-const PantsRoute = ({ setUrl }) => <ShopMenu data={pantsData} setUrl={setUrl} />;
-const HatRoute = ({ setUrl }) => <ShopMenu data={hatData} setUrl={setUrl} />;
-const ShoesRoute = ({ setUrl }) => <ShopMenu data={shoesData} setUrl={setUrl} />;
-const AccRoute = ({ setUrl }) => <ShopMenu data={accData} setUrl={setUrl} />;
-
-
-
 //Shop tabs instantiation
-const Tab = createMaterialTopTabNavigator({
-  screens: {
-    Body: BodyRoute,
-    Shirts: ShirtRoute,
-    Pants: PantsRoute,
-    Hats: HatRoute,
-    Shoes: ShoesRoute,
-    Accessories: AccRoute,
-  },
-});
+const Tab = createMaterialTopTabNavigator();
 
 //Main - container display
 const ShopScreen = () => {
-  // Initialize the state for accUrl
-  const [bgUrl, setBgUrl] = useState("https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/background%2Fbg_day.png?alt=media&token=bbe05178-2fd6-4c09-94ae-fcd2a932f8b6");
-  const [bodyUrl, setBodyUrl] = useState("https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fbody5.png?alt=media&token=cc932d4b-ebcd-42b2-8c94-d9f3380bca07");
-  const [pantsUrl, setPantsUrl] = useState("https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fpants1.png?alt=media&token=bd6acb1a-eb39-4fc5-bb9a-7db56571ed8b");
-  const [shirtUrl, setShirtUrl] = useState("https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fshirt1.png?alt=media&token=e85df23e-d994-491f-8095-dc9895265ce9");
-  const [hatUrl, setHatUrl] = useState("https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fhat4.png?alt=media&token=19020a01-e907-4071-be8e-05f9435f7a97");
-  const [shoesUrl, setShoesUrl] = useState("https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Fshoes2.png?alt=media&token=4ade86b0-7a61-415e-bc67-e64807a1d4f6");
-  const [accUrl, setAccUrl] = useState("https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/4bit%2Facc3.png?alt=media&token=6d968ef5-98bf-48eb-955b-23cacd383e92");
-
-  //Memoize states
-  const memoizedSetBgUrl = useCallback((url) => setBgUrl(url), []);
-  const memoizedSetBodyUrl = useCallback((url) => setBodyUrl(url), []);
-  const memoizedSetShirtUrl = useCallback((url) => setShirtUrl(url), []);
-  const memoizedSetPantsUrl = useCallback((url) => setPantsUrl(url), []);
-  const memoizedSetHatUrl = useCallback((url) => setHatUrl(url), []);
-  const memoizedSetShoesUrl = useCallback((url) => setShoesUrl(url), []);
-  const memoizedSetAccUrl = useCallback((url) => setAccUrl(url), []);
-
+  //state management
   // Fetch Balance from Database
   const [balance, setBalance] = useState(0);
-  const { user } = useContext(authContext);
-
+  //fetch balance from db
   useEffect(() => {
-    const userDocRef = doc(FIREBASE_DB, "users", user.uid); // Adjust collection name if needed
-  
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
         setBalance(docSnap.data().balance || 0);
@@ -105,32 +73,57 @@ const ShopScreen = () => {
     }, (error) => {
       console.error("Error fetching real-time balance:", error);
     });
-  
+
     return () => unsubscribe(); // Cleanup the listener on component unmount
   }, []);
 
+  //Fetch user id
+  const { user } = useContext(authContext);
+  //Fetch user data
+  const userDocRef = doc(FIREBASE_DB, "users", user.uid);
+
+  //Fetch eqipped items
+  const [equipped, setEquipped] = useState({
+    body: bodyData[0].imageUrl,
+    shirt: shirtData[0].imageUrl,
+    pants: pantsData[0].imageUrl,
+    hat: hatData[0].imageUrl,
+    shoes: shoesData[0].imageUrl,
+    acc: accData[0].imageUrl,
+  });
+  const updateEquipped = useCallback((category, url) => {
+    //err catch
+    if (!user) return;
+    if (!userDocRef) return;
+    //change equipped item
+    setEquipped((prev) => {
+      const newEquipped = { ...prev, [category]: url };
+      setDoc(userDocRef, { equipped: newEquipped }, { merge: true });
+      return newEquipped;
+    });
+  }, [user]);
 
   return (
     <SafeAreaProvider style={styles.background}>
-      <SafeAreaView>
+      <SafeAreaView style={styles.background}>
         {/* Displays amount of coins */}
         
         {/* Top half of screen (display of the character) */}
         <View style={styles.imageContainer}>
-          <Image source={{ uri: bgUrl }} style={styles.bgImage} />
-          <Image source={{ uri: bodyUrl }} style={styles.image} />
-          <Image source={{ uri: shoesUrl }} style={styles.image} />
-          <Image source={{ uri: shirtUrl }} style={styles.image} />
-          <Image source={{ uri: pantsUrl }} style={styles.image} />
-          <Image source={{ uri: hatUrl }} style={styles.hatImage} />
-          <Image source={{uri: accUrl}} style={styles.image} />
+          <Image source={{ uri: bgData[1].imageUrl }} style={styles.bgImage} />
+          <Image source={{ uri: equipped.body }} style={styles.image} />
+          <Image source={{ uri: equipped.shoes }} style={styles.image} />
+          <Image source={{ uri: equipped.shirt }} style={styles.image} />
+          <Image source={{ uri: equipped.pants }} style={styles.image} />
+          <Image source={{ uri: equipped.hat }} style={styles.hatImage} />
+          <Image source={{ uri: equipped.acc }} style={styles.image} />
         </View>
         <View style={styles.coinCountContainer}>
           <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/coin.png?alt=media&token=e0a45910-fae9-4c15-a462-19154f025f64"}} style={styles.coinImage} />
           <Text style={styles.coinText}>{balance}</Text>
         </View>
-        {/* Bottom half of screen (shop portion) */}
-        <View style={styles.background}>
+        {/* Bottom half of screen (display of shop tab menu) */}
+        <View style={styles.shopContainer}>
           <NavigationIndependentTree>
             <NavigationContainer>
               <Tab.Navigator
@@ -139,12 +132,12 @@ const ShopScreen = () => {
                   tabBarActiveTintColor: colors.black,
                   tabBarInactiveTintColor: colors.white,
                 }}>
-                <Tab.Screen name="🧍" children={() => <BodyRoute setUrl={memoizedSetBodyUrl} />} />
-                <Tab.Screen name="👕" children={() => <ShirtRoute setUrl={memoizedSetShirtUrl} />} />
-                <Tab.Screen name="👖" children={() => <PantsRoute setUrl={memoizedSetPantsUrl} />} />
-                <Tab.Screen name="👑" children={() => <HatRoute setUrl={memoizedSetHatUrl} />} />
-                <Tab.Screen name="👟" children={() => <ShoesRoute setUrl={memoizedSetShoesUrl} />} />
-                <Tab.Screen name="🌹" children={() => <AccRoute setUrl={memoizedSetAccUrl} />} />
+                <Tab.Screen name="🧍" children={() => <ShopMenu category="body" updateEquipped={updateEquipped} data={bodyData} />} />
+                <Tab.Screen name="👕" children={() => <ShopMenu category="shirt" updateEquipped={updateEquipped} data={shirtData} />} />
+                <Tab.Screen name="👖" children={() => <ShopMenu category="pants" updateEquipped={updateEquipped} data={pantsData} />} />
+                <Tab.Screen name="👑" children={() => <ShopMenu category="hat" updateEquipped={updateEquipped} data={hatData} />} />
+                <Tab.Screen name="👟" children={() => <ShopMenu category="shoes" updateEquipped={updateEquipped} data={shoesData} />} />
+                <Tab.Screen name="🌹" children={() => <ShopMenu category="acc" updateEquipped={updateEquipped} data={accData} />} />
                 
               </Tab.Navigator>
             </NavigationContainer>
@@ -178,6 +171,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingBottom: 5,
+    flex: 1,
   },
   coinCountContainer: {
     width: Dimensions.get('window').width,
@@ -185,6 +179,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.secondary,
     flexDirection: 'row',
     justifyContent: 'center',
+  },
+  shopContainer: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+    backgroundColor: colors.primarySoft,
+    paddingTop: 16,
+    paddingBottom: 16,
+    flex: 1,
   },
   thumbnails: {
     width: 128,
@@ -210,7 +212,7 @@ const styles = StyleSheet.create({
     objectFit: 'fill',
     position: 'absolute',
     paddingTop: 20,
-    top: -65,
+    top: -100,
     left: 69,
   },
   coinImage: {
