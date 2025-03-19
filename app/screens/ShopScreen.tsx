@@ -62,15 +62,10 @@ const ShopScreen = () => {
   //Fetch user id
   const { user } = useContext(authContext);
   //Fetch user data
-  const userDocRef = doc(FIREBASE_DB, "users", user?.uid);
+  const userDocRef = doc(FIREBASE_DB, "users", user.uid);
 
   //Instantiate eqipped items
-  const [equBody, setEquBody] = useState(bodyData[0].imageUrl);
-  const [equShirt, setEquShirt] = useState(shirtData[0].imageUrl);
-  const [equPants, setEquPants] = useState(pantsData[0].imageUrl);
-  const [equHat, setEquHat] = useState(hatData[0].imageUrl);
-  const [equShoes, setEquShoes] = useState(shoesData[0].imageUrl);
-  const [equAcc, setEquAcc] = useState(accData[0].imageUrl);
+  const [equipped, setEquipped] = useState({});
 
   //state management
   // Fetch Balance from Database
@@ -85,13 +80,7 @@ const ShopScreen = () => {
       if (docSnap.exists()) {
         //coin balance
         setBalance(docSnap.data().balance || 0);
-        //equipped items
-        setEquBody(docSnap.data().equBody || bodyData[0].imageUrl);
-        setEquShirt(docSnap.data().equShirt || shirtData[0].imageUrl);
-        setEquPants(docSnap.data().equPants || pantsData[0].imageUrl);
-        setEquHat(docSnap.data().equHat || hatData[0].imageUrl);
-        setEquShoes(docSnap.data().equShoes || shoesData[0].imageUrl);
-        setEquAcc(docSnap.data().equAcc || accData[0].imageUrl);
+        setEquipped(docSnap.data().equipped || {});
       } else {
         console.log("No such user document!");
       }
@@ -102,55 +91,15 @@ const ShopScreen = () => {
     return () => unsubscribe(); // Cleanup the listener on component unmount
   }, [user]);
 
-  const updateEquipped = useCallback(async (category, url) => {
-    //err catch
-    if (!user || !userDocRef) return;
-    console.log("url of type", typeof url);
-    //update equipped items in db
-    try {
-      console.log(category);
-      //change equipped item
-      //body
-      if (category == 'body') {
-        console.log("first if triggered");
-        await setDoc(userDocRef, { equBody: url });
-        setEquBody(url);
-      }
-      //shirt
-      else if (category == 'shirt') {
-        console.log("second if triggered");
-        await setDoc(userDocRef, { equShirt: url });
-        setEquShirt(url);
-      }
-      //pants
-      else if (category == 'pants') {
-        console.log("third if triggered");
-        await setDoc(userDocRef, { equPants: url });
-        setEquPants(url);
-      }
-        //hat
-      else if (category == 'hat') {
-        console.log("fourth if triggered");
-        await setDoc(userDocRef, { equHat: url });
-        setEquHat(url);
-      }
-      //shoes
-      else if (category == 'shoes') {
-        console.log("fifth if triggered");
-        await setDoc(userDocRef, { equShoes: url });
-        setEquShoes(url);
-      }
-      //pants
-      else if (category == 'acc') {
-        console.log("sixth if triggered");
-        await setDoc(userDocRef, { equAcc: url });
-        setEquAcc(url);
-      }
-      
-    } catch (error) {
-      console.error("Error updating equipped items: ", error);
-    }
-  }, [user, equBody, equShirt, equPants, equHat, equShoes, equAcc]);
+  // Update equipped item in Firestore
+  const updateEquipped = useCallback((category, url) => {
+    if (!userDocRef) return; // Prevent errors
+    setEquipped((prev) => {
+      const newEquipped = { ...prev, [category]: url };
+      setDoc(userDocRef, { equipped: newEquipped }, { merge: true });
+      return newEquipped;
+    });
+  }, [user, userDocRef]);
 
   return (
     <SafeAreaProvider style={styles.background}>
@@ -160,12 +109,12 @@ const ShopScreen = () => {
         {/* Top half of screen (display of the character) */}
         <View style={styles.imageContainer}>
           <Image source={{ uri: bgData[0].imageUrl }} style={styles.bgImage} />
-          <Image source={{ uri: equBody || bodyData[0].imageUrl }} style={styles.image} />
-          <Image source={{ uri: equShoes || shoesData[0].imageUrl }} style={styles.image} />
-          <Image source={{ uri: equShirt || shirtData[0].imageUrl }} style={styles.image} />
-          <Image source={{ uri: equPants || pantsData[0].imageUrl }} style={styles.image} />
-          <Image source={{ uri: equHat || hatData[0].imageUrl }} style={styles.hatImage} />
-          <Image source={{ uri: equAcc || accData[0].imageUrl }} style={styles.image} />
+          <Image source={{ uri: equipped.body }} style={styles.image} />
+          <Image source={{ uri: equipped.shoes }} style={styles.image} />
+          <Image source={{ uri: equipped.shirt }} style={styles.image} />
+          <Image source={{ uri: equipped.pants }} style={styles.image} />
+          <Image source={{ uri: equipped.hat }} style={styles.hatImage} />
+          <Image source={{ uri: equipped.acc }} style={styles.image} />
         </View>
         <View style={styles.coinCountContainer}>
           <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/coin.png?alt=media&token=e0a45910-fae9-4c15-a462-19154f025f64"}} style={styles.coinImage} />
