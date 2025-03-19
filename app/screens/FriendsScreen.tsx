@@ -25,7 +25,11 @@ const FriendsScreen = ({ navigation }) => {
     const [requestModalVisible, setRequestModalVisible] = useState(false);
     const [activeTab, setActiveTab] = useState("received");
     const translateY = useSharedValue(MID_POSITION);
-    const navbarVisible = useDerivedValue(() => translateY.value <= height * 0.15);
+    const navbarVisible = useDerivedValue(() => {
+        return translateY.value <= height * 0.15;
+    }, []);
+    const [selectedFriend, setSelectedFriend] = useState(null);
+    const [friendModalVisible, setFriendModalVisible] = useState(false);
     const settings = useContext(SettingsContext);
 
     if (!settings || !user) return null;
@@ -228,12 +232,18 @@ const FriendsScreen = ({ navigation }) => {
     
     const renderFriendItem = ({ item }) => {
         return (
-            <View style={styles.friendItem}>
+            <Pressable 
+                style={styles.friendItem} 
+                onPress={() => {
+                    setSelectedFriend(item);
+                    setFriendModalVisible(true);
+                }}
+            >
                 {item.pfp ? (
                     <Image source={{ uri: item.pfp }} style={styles.profilePic} />
                 ) : null}
                 <Text style={styles.friendText}>{item.username} Lvl. {item.level}</Text>
-            </View>
+            </Pressable>
         );
     };
 
@@ -320,9 +330,32 @@ const FriendsScreen = ({ navigation }) => {
                 </View>
             </View>
 
+            { /* Selected Friend Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={friendModalVisible}
+                onRequestClose={() => setFriendModalVisible(false)}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContainer}>
+                        {selectedFriend && (
+                            <>
+                                <Text style={styles.modalTitle}>{selectedFriend.username}</Text>
+                                {selectedFriend.pfp && (
+                                    <Image source={{ uri: selectedFriend.pfp }} style={styles.profilePicLarge} />
+                                )}
+                                <Text>Level: {selectedFriend.level}</Text>
+                                <Button title="Close" onPress={() => setFriendModalVisible(false)} />
+                            </>
+                        )}
+                    </View>
+                </View>
+            </Modal>
+
             { /* Navbar */}
             <View style={[styles.navbar, {backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]}>
-                <CustomMenu navbarVisible={navbarVisible.value}/>
+                <CustomMenu navbarVisible={navbarVisible}/>
                 <View style={{width: "65%"}}></View>
                 <Pressable style={styles.addFriend} onPress={() => setModalVisible(true)}>
                     <Entypo name="add-user" size={70} color={settings.darkMode ? colors.white : colors.black} />
@@ -453,6 +486,12 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         marginRight: 10,
         borderWidth: 1,
+    },
+    profilePicLarge: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        marginBottom: 10,
     },
     tab: {
         padding: 10,

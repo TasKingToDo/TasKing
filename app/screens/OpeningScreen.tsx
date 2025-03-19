@@ -9,7 +9,7 @@ import { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-nati
 import Animated from 'react-native-reanimated';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
-import bodyData from "../assets/shopdata/bodyData";
+import bodyData from '../assets/shopdata/bodyData';
 
 const OpeningScreen = ({navigation}) => {
     const settings = useContext(SettingsContext);

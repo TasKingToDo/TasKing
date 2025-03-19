@@ -40,15 +40,16 @@ const CreateTaskScreen = ({navigation}) => {
     if (!settings || !user) return null;
 
     const handleDateChange = (text: string) => {
-        let formattedText = text.replace(/[^0-9-]/g, '');
-
-        if (formattedText.length === 4 || formattedText.length === 7) {
-            formattedText += '-';
+        let cleanedText = text.replace(/[^0-9-]/g, '');
+        if (text.length < date.length) {
+            setDate(text);
+        } else {
+            if (cleanedText.length === 4 || cleanedText.length === 7) {
+                cleanedText += '-';
+            }
+            setDate(cleanedText);
         }
-
-        setDate(formattedText);
-
-        if (/^\d{4}-\d{2}-\d{2}$/.test(formattedText)) {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(cleanedText)) {
             setDateError('');
         } else {
             setDateError('Date must be in YYYY-MM-DD format');
@@ -56,21 +57,20 @@ const CreateTaskScreen = ({navigation}) => {
     };
 
     const handleTimeChange = (text: string) => {
-        let formattedText = text.replace(/[^0-9:APM ]/gi, '');
-    
-        if (formattedText.length === 2 && !formattedText.includes(':')) {
-            formattedText += ':';
+        let cleanedText = text.replace(/[^0-9:APM ]/gi, '');
+        if (text.length < time.length) {
+            setTime(text);
+        } else {
+            if (cleanedText.length === 2 && !cleanedText.includes(':')) {
+                cleanedText += ':';
+            }
+            if (cleanedText.length === 5 && !cleanedText.includes(' ')) {
+                cleanedText += ' ';
+            }
+            cleanedText = cleanedText.toUpperCase();
+            setTime(cleanedText);
         }
-    
-        if (formattedText.length === 5 && !formattedText.includes(' ')) {
-            formattedText += ' ';
-        }
-    
-        formattedText = formattedText.toUpperCase();
-    
-        setTime(formattedText);
-    
-        if (/^(0[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/.test(formattedText)) {
+        if (/^(0[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/.test(cleanedText)) {
             setTimeError('');
         } else {
             setTimeError('Time must be in HH:MM AM/PM format');
@@ -105,7 +105,9 @@ const CreateTaskScreen = ({navigation}) => {
         }
     };
 
-    const navbarVisible = useDerivedValue(() => translateY.value <= height * 0.15);
+    const navbarVisible = useDerivedValue(() => {
+        return translateY.value <= height * 0.15;
+    }, []);    
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
@@ -137,24 +139,28 @@ const CreateTaskScreen = ({navigation}) => {
                                         autoCapitalize="none"
                                     />
                                     <View style={styles.row}>
-                                        <TextInput 
-                                            style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black}]}
-                                            value={date}
-                                            onChangeText={(text) => handleDateChange(text)}
-                                            placeholder="YYYY-MM-DD"
-                                            placeholderTextColor={settings.darkMode ? colors.white : colors.black}
-                                            keyboardType="numeric"
-                                            maxLength={10}
-                                        />
-                                        <TextInput
-                                            style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black}]}
-                                            value={time}
-                                            onChangeText={(text) => handleTimeChange(text)}
-                                            placeholder="HH:MM AM/PM"
-                                            placeholderTextColor={settings.darkMode ? colors.white : colors.black}
-                                            keyboardType="default"
-                                            maxLength={8}
-                                        />
+                                        <View style={styles.fixedInputContainer}>
+                                            <TextInput 
+                                                style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black}]}
+                                                value={date}
+                                                onChangeText={handleDateChange}
+                                                placeholder="YYYY-MM-DD"
+                                                placeholderTextColor={settings.darkMode ? colors.white : colors.black}
+                                                keyboardType="numeric"
+                                                maxLength={10}
+                                            />
+                                        </View>
+                                        <View style={styles.fixedInputContainer}>
+                                            <TextInput
+                                                style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black}]}
+                                                value={time}
+                                                onChangeText={handleTimeChange}
+                                                placeholder="HH:MM AM/PM"
+                                                placeholderTextColor={settings.darkMode ? colors.white : colors.black}
+                                                keyboardType="default"
+                                                maxLength={8}
+                                            />
+                                        </View>
                                     </View>
                                 </View>
                                 {/* Repeat Select */}
@@ -249,7 +255,7 @@ const CreateTaskScreen = ({navigation}) => {
 
                         {/* Navbar */}
                         <View style={[styles.navbar, {backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]}>
-                            <CustomMenu navbarVisible={navbarVisible.value}/>
+                            <CustomMenu navbarVisible={navbarVisible}/>
                             <View style={{width: "65%"}}></View>
                             <Pressable style={styles.saveTask} onPress={handleSaveTask}>
                                 <Text style={{color: settings.darkMode ? colors.white : colors.black, fontSize: 30}}>Save</Text>
@@ -271,6 +277,11 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
+    },
+    fixedInputContainer: {
+        width: 'auto',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     formContainer: {
         width: '90%',
