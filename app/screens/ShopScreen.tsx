@@ -4,7 +4,7 @@ import {
   Dimensions, StyleSheet, FlatList, TouchableOpacity, Pressable
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, query, collection, where } from 'firebase/firestore';
 //npm install react-native-tab-view
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
@@ -37,7 +37,7 @@ const ShopMenu: React.FC<ShopMenuProps> = memo(({ category, updateEquipped, data
     <FlatList
       style={styles.flatListContainer}
       numColumns={numColumns}
-      data={data}
+      data={data.flat()}
       keyExtractor={(item, index) => item.id?.toString() || index.toString()}
       renderItem={({ item }) => (
         <View style={styles.flatListContainer}>
@@ -59,49 +59,98 @@ const Tab = createMaterialTopTabNavigator();
 
 //Main - container display
 const ShopScreen = () => {
+  //Fetch user id
+  const { user } = useContext(authContext);
+  //Fetch user data
+  const userDocRef = doc(FIREBASE_DB, "users", user?.uid);
+
+  //Instantiate eqipped items
+  const [equBody, setEquBody] = useState(bodyData[0].imageUrl);
+  const [equShirt, setEquShirt] = useState(shirtData[0].imageUrl);
+  const [equPants, setEquPants] = useState(pantsData[0].imageUrl);
+  const [equHat, setEquHat] = useState(hatData[0].imageUrl);
+  const [equShoes, setEquShoes] = useState(shoesData[0].imageUrl);
+  const [equAcc, setEquAcc] = useState(accData[0].imageUrl);
+
   //state management
   // Fetch Balance from Database
   const [balance, setBalance] = useState(0);
-  //fetch balance from db
+
+  //Fetch data from db
   useEffect(() => {
+    //err catch
+    if (!user) return;
+    //fetch data
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
+        //coin balance
         setBalance(docSnap.data().balance || 0);
+        //equipped items
+        setEquBody(docSnap.data().equBody || bodyData[0].imageUrl);
+        setEquShirt(docSnap.data().equShirt || shirtData[0].imageUrl);
+        setEquPants(docSnap.data().equPants || pantsData[0].imageUrl);
+        setEquHat(docSnap.data().equHat || hatData[0].imageUrl);
+        setEquShoes(docSnap.data().equShoes || shoesData[0].imageUrl);
+        setEquAcc(docSnap.data().equAcc || accData[0].imageUrl);
       } else {
         console.log("No such user document!");
       }
     }, (error) => {
-      console.error("Error fetching real-time balance:", error);
+      console.error("Error fetching data:", error);
     });
 
     return () => unsubscribe(); // Cleanup the listener on component unmount
-  }, []);
-
-  //Fetch user id
-  const { user } = useContext(authContext);
-  //Fetch user data
-  const userDocRef = doc(FIREBASE_DB, "users", user.uid);
-
-  //Fetch eqipped items
-  const [equipped, setEquipped] = useState({
-    body: bodyData[0].imageUrl,
-    shirt: shirtData[0].imageUrl,
-    pants: pantsData[0].imageUrl,
-    hat: hatData[0].imageUrl,
-    shoes: shoesData[0].imageUrl,
-    acc: accData[0].imageUrl,
-  });
-  const updateEquipped = useCallback((category, url) => {
-    //err catch
-    if (!user) return;
-    if (!userDocRef) return;
-    //change equipped item
-    setEquipped((prev) => {
-      const newEquipped = { ...prev, [category]: url };
-      setDoc(userDocRef, { equipped: newEquipped }, { merge: true });
-      return newEquipped;
-    });
   }, [user]);
+
+  const updateEquipped = useCallback(async (category, url) => {
+    //err catch
+    if (!user || !userDocRef) return;
+    console.log("url of type", typeof url);
+    //update equipped items in db
+    try {
+      console.log(category);
+      //change equipped item
+      //body
+      if (category == 'body') {
+        console.log("first if triggered");
+        await setDoc(userDocRef, { equBody: url });
+        setEquBody(url);
+      }
+      //shirt
+      else if (category == 'shirt') {
+        console.log("second if triggered");
+        await setDoc(userDocRef, { equShirt: url });
+        setEquShirt(url);
+      }
+      //pants
+      else if (category == 'pants') {
+        console.log("third if triggered");
+        await setDoc(userDocRef, { equPants: url });
+        setEquPants(url);
+      }
+        //hat
+      else if (category == 'hat') {
+        console.log("fourth if triggered");
+        await setDoc(userDocRef, { equHat: url });
+        setEquHat(url);
+      }
+      //shoes
+      else if (category == 'shoes') {
+        console.log("fifth if triggered");
+        await setDoc(userDocRef, { equShoes: url });
+        setEquShoes(url);
+      }
+      //pants
+      else if (category == 'acc') {
+        console.log("sixth if triggered");
+        await setDoc(userDocRef, { equAcc: url });
+        setEquAcc(url);
+      }
+      
+    } catch (error) {
+      console.error("Error updating equipped items: ", error);
+    }
+  }, [user, equBody, equShirt, equPants, equHat, equShoes, equAcc]);
 
   return (
     <SafeAreaProvider style={styles.background}>
@@ -110,13 +159,13 @@ const ShopScreen = () => {
         
         {/* Top half of screen (display of the character) */}
         <View style={styles.imageContainer}>
-          <Image source={{ uri: bgData[1].imageUrl }} style={styles.bgImage} />
-          <Image source={{ uri: equipped.body }} style={styles.image} />
-          <Image source={{ uri: equipped.shoes }} style={styles.image} />
-          <Image source={{ uri: equipped.shirt }} style={styles.image} />
-          <Image source={{ uri: equipped.pants }} style={styles.image} />
-          <Image source={{ uri: equipped.hat }} style={styles.hatImage} />
-          <Image source={{ uri: equipped.acc }} style={styles.image} />
+          <Image source={{ uri: bgData[0].imageUrl }} style={styles.bgImage} />
+          <Image source={{ uri: equBody || bodyData[0].imageUrl }} style={styles.image} />
+          <Image source={{ uri: equShoes || shoesData[0].imageUrl }} style={styles.image} />
+          <Image source={{ uri: equShirt || shirtData[0].imageUrl }} style={styles.image} />
+          <Image source={{ uri: equPants || pantsData[0].imageUrl }} style={styles.image} />
+          <Image source={{ uri: equHat || hatData[0].imageUrl }} style={styles.hatImage} />
+          <Image source={{ uri: equAcc || accData[0].imageUrl }} style={styles.image} />
         </View>
         <View style={styles.coinCountContainer}>
           <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/coin.png?alt=media&token=e0a45910-fae9-4c15-a462-19154f025f64"}} style={styles.coinImage} />
