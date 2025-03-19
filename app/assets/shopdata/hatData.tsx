@@ -3,7 +3,7 @@
 const hatData = [
     {
       id: 0,
-      imageUrl: 'null',
+      imageUrl: "null",
     },
     {
         id: 1,

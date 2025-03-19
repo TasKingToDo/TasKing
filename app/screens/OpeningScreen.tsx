@@ -71,17 +71,35 @@ const OpeningScreen = ({navigation}) => {
             const user = response.user;
 
             // Store additional user data in Firestore
-            await setDoc(doc(FIREBASE_DB, "users", user.uid), {
-                friends: [],
-                balance: 0,
-                email: email,
-                level: 0,
-                owneditems: [bodyData[0].imageUrl, bodyData[1].imageUrl, bodyData[2].imageUrl, bodyData[3].imageUrl, bodyData[4].imageUrl],
-                equippeditems: [],
-                currentresolution: "4-bit",
-                pfp: "",
-                username: username || "NewUser",
-                xp: 0
+          await setDoc(doc(FIREBASE_DB, "users", user.uid), {
+            friends: [],
+            balance: 0,
+            email: email,
+            level: 0,
+            ownedBodies: [
+              //all skin tones unlocked by default
+              bodyData[0].imageUrl,
+              bodyData[1].imageUrl,
+              bodyData[2].imageUrl,
+              bodyData[3].imageUrl,
+              bodyData[4].imageUrl,
+            ],
+            ownedShirts: [],
+            ownedPants: [],
+            ownedHats: [],
+            ownedShoes: [],
+            ownedAccs: [],
+            equipped: {
+              body: bodyData[3].imageUrl,
+              shirt: "null",
+              pants: "null",
+              hat: "null",
+              shoes: "null",
+              acc: "null",
+            },
+              pfp: "",
+              username: username || "NewUser",
+              xp: 0
             });
 
             alert('Sign-up successful!');
