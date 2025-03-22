@@ -40,7 +40,30 @@ const FriendsScreen = ({ navigation }) => {
         const userRef = doc(FIREBASE_DB, "users", user.uid);
         const unsubscribeFriends = onSnapshot(userRef, async (userSnap) => {
             if (!userSnap.exists()) return;
-            setFriends(userSnap.data().Friends || []);
+            const friendIds = userSnap.data().Friends || [];
+        
+            const friendData = await Promise.all(friendIds.map(async (id) => {
+                const friendDoc = await getDoc(doc(FIREBASE_DB, "users", id));
+                if (friendDoc.exists()) {
+                    const data = friendDoc.data();
+                    return {
+                        id,
+                        username: data.username || "Unknown",
+                        level: data.level || 0,
+                        pfp: data.pfp || null,
+                        equipped: data.equipped || {},
+                    };
+                } else {
+                    return {
+                        id,
+                        username: "Unknown",
+                        level: 0,
+                        pfp: null,
+                    };
+                }
+            }));
+        
+            setFriends(friendData);
         });
     
         const receivedQuery = query(collection(FIREBASE_DB, "friendRequests"), where("receiverId", "==", user.uid));
@@ -70,7 +93,7 @@ const FriendsScreen = ({ navigation }) => {
                         visibilityTime: 5000,
                         onPress: () => {
                             Toast.hide();
-                            navigation.navigate('FriendsScreen');
+                            navigation.navigate('Friends');
                         },
                     });
                 }
@@ -148,7 +171,6 @@ const FriendsScreen = ({ navigation }) => {
     
             setFriendUsername("");
             setModalVisible(false);
-            Alert.alert("Success", `Friend request sent to ${friendUsername}!`);
         } catch (error) {
             console.error("Error sending friend request:", error);
             Alert.alert("Error", "Something went wrong. Please try again.");
@@ -239,10 +261,21 @@ const FriendsScreen = ({ navigation }) => {
                     setFriendModalVisible(true);
                 }}
             >
-                {item.pfp ? (
-                    <Image source={{ uri: item.pfp }} style={styles.profilePic} />
-                ) : null}
-                <Text style={styles.friendText}>{item.username} Lvl. {item.level}</Text>
+                <View style={styles.friendCardContent}>
+                    {/* Avatar or placeholder */}
+                    <View style={styles.profilePicWrapper}>
+                        {item.pfp ? (
+                            <Image source={{ uri: item.pfp }} style={styles.profilePic} />
+                        ) : (
+                            <View style={styles.profilePicPlaceholder} />
+                        )}
+                    </View>
+
+                    {/* Username and level */}
+                    <Text style={styles.friendText}>
+                        {`${item.username} · Lvl ${item.level ?? 0}`}
+                    </Text>
+                </View>
             </Pressable>
         );
     };
@@ -341,12 +374,37 @@ const FriendsScreen = ({ navigation }) => {
                     <View style={styles.modalContainer}>
                         {selectedFriend && (
                             <>
-                                <Text style={styles.modalTitle}>{selectedFriend.username}</Text>
-                                {selectedFriend.pfp && (
-                                    <Image source={{ uri: selectedFriend.pfp }} style={styles.profilePicLarge} />
-                                )}
-                                <Text>Level: {selectedFriend.level}</Text>
-                                <Button title="Close" onPress={() => setFriendModalVisible(false)} />
+                                {/* Top: Friends Name and Level */}
+                                <View>
+                                    <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{selectedFriend.username}</Text>
+                                    <Text style={{ fontSize: 16}}>Level {selectedFriend.level}</Text>
+                                </View>
+
+                                <View style={{ flexDirection: "row", width: "100%", marginTop: 10 }}>
+                                    {/* Left: Character Image */}
+                                    <View style={styles.friendImageBackground}>
+                                        <View style={styles.friendImageContainer}>
+                                            <Image source={{ uri: selectedFriend?.equipped?.body }} style={styles.image} />
+                                            <Image source={{ uri: selectedFriend?.equipped?.shoes }} style={styles.image} />
+                                            <Image source={{ uri: selectedFriend?.equipped?.shirt }} style={styles.image} />
+                                            <Image source={{ uri: selectedFriend?.equipped?.pants }} style={styles.image} />
+                                            <Image source={{ uri: selectedFriend?.equipped?.hat }} style={styles.hatImage} />
+                                            <Image source={{ uri: selectedFriend?.equipped?.acc }} style={styles.image} />
+                                        </View>
+                                    </View>
+
+                                    {/* Divider Line */}
+                                    <View style={{ width: 1, backgroundColor: colors.black, marginHorizontal: 10 }}></View>
+
+                                    {/* Right: Stats */}
+                                    <View style={{ flex: 1 }}>
+                                        <Text> Stats Here...</Text>
+                                    </View>
+                                </View>
+
+                                <View style={{ marginTop: 15, alignSelf: "center" }}>
+                                    <Button title="Close" onPress={() => setFriendModalVisible(false)} />
+                                </View>
                             </>
                         )}
                     </View>
@@ -405,16 +463,54 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
     },
-    friendItem: {
-        flexDirection: "row",
+    friendCardContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 15,
+    },
+    friendImageBackground: {
         alignItems: "center",
+        backgroundColor: colors.primarySoft,
+        borderRadius: 10,
         padding: 10,
     },
+    friendImageContainer: {
+        width: 140,
+        height: 170,
+        position: 'relative',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    friendItem: {
+        backgroundColor: colors.primarySoft,
+        borderRadius: 12,
+        paddingVertical: 12,
+        marginBottom: 10,
+        width: 'auto',
+        alignSelf: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
     friendList: {
-        marginTop: 15
+        marginTop: 15,
+        paddingHorizontal: 10,
+        width: '100%',
+        alignItems: 'center',
     },
     friendText: {
-        fontSize: 20,
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    hatImage: {
+        width: "100%",
+        height: "100%",
+        resizeMode: 'contain',
+        position: 'absolute',
+        top: -69,
     },
     headerContainer: {
         flexDirection: 'row',
@@ -428,6 +524,12 @@ const styles = StyleSheet.create({
     headerText: {
         fontSize: 26,
         fontWeight: 'bold',
+    },
+    image: {
+        width: "100%",
+        height: "100%",
+        resizeMode: 'contain',
+        position: 'absolute',
     },
     input: {
         width: "100%",
@@ -449,10 +551,11 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         width: "90%",
+        height: "auto",
         padding: 20,
         backgroundColor: "white",
         borderRadius: 10,
-        alignItems: "center",
+        alignItems: "flex-start",
     },
     modalTitle: {
         fontSize: 20,
@@ -481,18 +584,24 @@ const styles = StyleSheet.create({
         right: "2%",
     },
     profilePic: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        marginRight: 10,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
         borderWidth: 1,
+        borderColor: '#ccc',
     },
-    profilePicLarge: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        marginBottom: 10,
+    profilePicPlaceholder: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
     },
+    profilePicWrapper: {
+        width: 50,
+        height: 50,
+        marginRight: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
     tab: {
         padding: 10,
         borderBottomWidth: 2,
