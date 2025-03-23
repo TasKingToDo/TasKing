@@ -29,19 +29,19 @@ function ForgotPassScreen({navigation}) {
                         <Image style={styles.logo} source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/logo_small.png?alt=media&token=b6f39eef-61b9-41d9-bf22-f1cf04163409" }} />
                         <View style={styles.textFields} >
                             <TextInput
+                                style={[styles.textInput, { borderColor: colors.black}]}
                                 value={email}
                                 placeholder="Enter Email"
                                 autoCapitalize="none"
                                 onChangeText={(text) => setEmail(text)}
-                                style={styles.text}
                             />
                         </View>
                         <View style={styles.buttons}>
-                            <Button color={colors.accept} title="Confirm Password Change" onPress={resetPassword} />
+                            <Button color={colors.accept} title="Confirm Change" onPress={resetPassword} />
                         </View>
                         <View style={styles.backLoginLine}>
                             <Pressable onPress={() => navigation.navigate("Welcome")}>
-                                <Text style={styles.backLogin}>Back to Login</Text>
+                                <Text style={styles.backLogin}>Back to Login.</Text>
                             </Pressable>
                         </View>
                     </View>
@@ -54,41 +54,44 @@ function ForgotPassScreen({navigation}) {
 const styles = StyleSheet.create({
     background: {
         flex: 1,
-        justifyContent: "center",
+        justifyContent: "flex-start",
         alignItems: "center",
+    },
+    backLogin: {
+        color: "blue",
+        textDecorationLine: "underline"
+    },
+    backLoginLine: {
+        marginTop: 20,
+        alignItems: "center",
+    },
+    buttons: {
+        alignItems: "center",
+        justifyContent: "center",
+        marginVertical: 20,
     },
     container: {
         flex: 1,
     },
-    buttons: {
-        alignItems: "center",
-        flexDirection: "row",
-        justifyContent: "center",
-    },
     logo: {
         width: 100,
         height: 100,
-        position: "absolute",
-        top: 10,
-    },
-    text: {
-        fontSize: 25
+        marginBottom: 200,
+        marginTop: 20
     },
     textFields: {
+        width: "100%",
         alignItems: "center",
-        justifyContent: "center",
-
+        marginTop: 10,
     },
-    backLoginLine: {
-        alignItems: "center",
-        justifyContent: "center",
-        width: "70%",
-        marginVertical: "10%",
-    },
-    backLogin: {
-        color: "blue",
-        textDecorationLine: "underline",
-        fontSize: 20
+    textInput: {
+        width: 280,
+        height: 60,
+        fontSize: 18,
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 10,
+        marginBottom: 10,
     },
 })
 

@@ -38,7 +38,6 @@ const HomeScreen = ({navigation}) => {
         while (xp >= xpThreshold + nextThreshold) {
             xpThreshold += nextThreshold;
             level++;
-            nextThreshold += 20;
         }
     
         return { level, xpThreshold, nextThreshold };
@@ -134,6 +133,7 @@ const HomeScreen = ({navigation}) => {
         bottom: 0,
         display: translateY.value > height * 0.15 ? 'none' : 'flex',
         backgroundColor: colors.primarySoft,
+        zIndex: translateY.value < -height * 0.15 ? 2 : 1,
     })); 
     
     return (

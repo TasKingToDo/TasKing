@@ -64,11 +64,11 @@ const CustomMenu = ({navbarVisible}) => {
         let requiredProgress = 0;
     
         if (resolution === "8-bit") {
-            cost = 50;
+            cost = 100;
             requiredProgress = 100;
         } else if (resolution === "16-bit") {
-            cost = 100;
-            requiredProgress = 200;
+            cost = 250;
+            requiredProgress = 400;
         }
     
         if (progress < requiredProgress) {
@@ -196,14 +196,14 @@ const CustomMenu = ({navbarVisible}) => {
                         <Pressable 
                             style={[
                                 styles.resolutionButton, 
-                                (!unlockedResolutions.includes("8-bit") && (progress < 100 || balance < 50)) && styles.locked,
+                                (!unlockedResolutions.includes("8-bit") && (progress < 100 || balance < 100)) && styles.locked,
                                 currentResolution === "8-bit" && styles.selectedResolution
                             ]} 
                             onPress={() => handleResolutionSelect("8-bit")}
-                            disabled={!unlockedResolutions.includes("8-bit") && (progress < 100 || balance < 50)}
+                            disabled={!unlockedResolutions.includes("8-bit") && (progress < 100 || balance < 100)}
                         >
                             <Text style={styles.resolutionText}>
-                                8-bit {unlockedResolutions.includes("8-bit") ? "" : `(Progress: ${progress}/100, Cost: 50)`}
+                                8-bit {unlockedResolutions.includes("8-bit") ? "" : `(Progress: ${progress}/100, Cost: 100)`}
                             </Text>
                         </Pressable>
 
@@ -211,14 +211,14 @@ const CustomMenu = ({navbarVisible}) => {
                         <Pressable 
                             style={[
                                 styles.resolutionButton, 
-                                (!unlockedResolutions.includes("16-bit") && (progress < 200 || balance < 100)) && styles.locked,
+                                (!unlockedResolutions.includes("16-bit") && (progress < 400 || balance < 250)) && styles.locked,
                                 currentResolution === "16-bit" && styles.selectedResolution
                             ]} 
                             onPress={() => handleResolutionSelect("16-bit")}
-                            disabled={!unlockedResolutions.includes("16-bit") && (progress < 200 || balance < 100)}
+                            disabled={!unlockedResolutions.includes("16-bit") && (progress < 400 || balance < 250)}
                         >
                             <Text style={styles.resolutionText}>
-                                16-bit {unlockedResolutions.includes("16-bit") ? "" : `(Progress: ${progress}/200, Cost: 100)`}
+                                16-bit {unlockedResolutions.includes("16-bit") ? "" : `(Progress: ${progress}/400, Cost: 250)`}
                             </Text>
                         </Pressable>
 

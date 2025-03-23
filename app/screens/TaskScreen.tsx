@@ -11,6 +11,10 @@ import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '../config/authContext';
 
 
+type Subtask = {
+    text: string;
+}
+
 type Task = {
     id: string;
     name: string;
@@ -19,6 +23,7 @@ type Task = {
     repeat: string | {type: string, interval: number};
     completed?: boolean;
     createdAt: string;
+    subtasks: Subtask[]
 };
 
 
@@ -36,10 +41,19 @@ const TaskScreen = () => {
     
         const q = query(collection(FIREBASE_DB, "tasks"), where("userId", "==", user.uid));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            let fetchedTasks: Task[] = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }) as Task);
+            let fetchedTasks: Task[] = querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    name: data.name,
+                    date: data.date,
+                    time: data.time,
+                    repeat: data.repeat,
+                    completed: data.completed,
+                    createdAt: data.createdAt,
+                    subtasks: data.subtask ?? [] // fallback to empty array if undefined
+                };
+            });
     
             setTasks(sortTasks(fetchedTasks, sortOption));
             setLoading(false);
@@ -163,6 +177,11 @@ const TaskScreen = () => {
      
 
     const handleTaskPress = (taskId: string) => {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task || task.subtasks.length === 0) {
+            return;
+        }
+    
         setExpandedTask(expandedTask === taskId ? null : taskId);
     };
     
@@ -224,10 +243,17 @@ const TaskScreen = () => {
                                                 </Text>
                                             )}
 
-                                            {expandedTask === item.id && (
-                                                <Text style={[styles.taskDetails, { color: settings.darkMode ? colors.white : colors.black }]}>
-                                                    More details here...
-                                                </Text>
+                                            {expandedTask === item.id && item.subtasks && item.subtasks.length > 0 && (
+                                                <View>
+                                                    {item.subtasks.map((subtask, index) => (
+                                                        <Text
+                                                            key={index}
+                                                            style={[styles.taskDetails, { color: settings.darkMode ? colors.white : colors.black }]}
+                                                        >
+                                                            • {subtask.text}
+                                                        </Text>
+                                                    ))}
+                                                </View>
                                             )}
                                         </View>
                                     </Pressable>

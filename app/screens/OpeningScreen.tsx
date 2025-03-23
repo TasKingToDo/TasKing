@@ -10,6 +10,7 @@ import Animated from 'react-native-reanimated';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
 import bodyData from '../assets/shopdata/bodyData';
+import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 
 const OpeningScreen = ({navigation}) => {
     const settings = useContext(SettingsContext);
@@ -40,17 +41,19 @@ const OpeningScreen = ({navigation}) => {
     }));
 
     const toggleLogin = () => {
-        setShowLogin(!showLogin);
-        if (showSignUp) {
-            setShowSignUp(false)
-        }
+        setShowLogin(true);
+        setShowSignUp(false);
+        // Clear input fields
+        setEmail('');
+        setPassword('');
     }
-
+    
     const toggleSignup = () => {
-        setShowSignUp(!showSignUp);
-        if (showLogin) {
-            setShowLogin(false)
-        }
+        setShowSignUp(true);
+        setShowLogin(false);
+        // Clear input fields
+        setEmail('');
+        setPassword('');
     }
 
     const signIn = async () => {
@@ -65,148 +68,178 @@ const OpeningScreen = ({navigation}) => {
       };
 
       const signUp = async () => {
-        try {
-            // Create a user in Firebase Authentication
-            const response = await createUserWithEmailAndPassword(auth, email, password);
-            const user = response.user;
+            try {
+                // Create a user in Firebase Authentication
+                const response = await createUserWithEmailAndPassword(auth, email, password);
+                const user = response.user;
 
-            // Store additional user data in Firestore
-          await setDoc(doc(FIREBASE_DB, "users", user.uid), {
-            friends: [],
-            balance: 0,
-            email: email,
-            level: 0,
-            ownedBodies: [
-              //all skin tones unlocked by default
-              bodyData[0].imageUrl,
-              bodyData[1].imageUrl,
-              bodyData[2].imageUrl,
-              bodyData[3].imageUrl,
-              bodyData[4].imageUrl,
-            ],
-            ownedShirts: [],
-            ownedPants: [],
-            ownedHats: [],
-            ownedShoes: [],
-            ownedAccs: [],
-            equipped: {
-              body: bodyData[3].imageUrl,
-              shirt: "null",
-              pants: "null",
-              hat: "null",
-              shoes: "null",
-              acc: "null",
-            },
-              pfp: "",
-              username: username || "NewUser",
-              xp: 0
-            });
+                // Store additional user data in Firestore
+                await setDoc(doc(FIREBASE_DB, "users", user.uid), {
+                    friends: [],
+                    balance: 0,
+                    email: email,
+                    level: 0,
+                    ownedBodies: [
+                        //all skin tones unlocked by default
+                        bodyData[0].imageUrl,
+                        bodyData[1].imageUrl,
+                        bodyData[2].imageUrl,
+                        bodyData[3].imageUrl,
+                        bodyData[4].imageUrl,
+                    ],
+                    ownedShirts: [],
+                    ownedPants: [],
+                    ownedHats: [],
+                    ownedShoes: [],
+                    ownedAccs: [],
+                    equipped: {
+                        body: bodyData[3].imageUrl,
+                        shirt: "null",
+                        pants: "null",
+                        hat: "null",
+                        shoes: "null",
+                        acc: "null",
+                    },
+                    currentresolution: "4-bit",
+                    pfp: "",
+                    username: username || "NewUser",
+                    xp: 0
+                });
 
-            alert('Sign-up successful!');
-            setShowLogin(false);
-            setShowSignUp(false);
-        } catch (error) {
-            console.log(error);
-            alert('Sign-up failed: ' + error.message);
-        }
+                alert('Sign-up successful!');
+                setShowLogin(false);
+                setShowSignUp(false);
+            } catch (error) {
+                console.log(error);
+                alert('Sign-up failed: ' + error.message);
+            }
     };
 
     return (
+        <GestureHandlerRootView style={{flex: 1}}>
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
-                    <SafeAreaView style={styles.container}>
-                        <Animated.View style={[styles.background, animatedStyle]}>
-                            <Image style={styles.logo} source={{uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/logo_large.png?alt=media&token=23b05660-b758-4a03-a261-79b3eca54329"}} />
-                            <View style={styles.buttons}>
-                                <Button color={colors.grey} title="Signup" onPress={toggleSignup}/>
-                                {showSignUp && (
-                                    <View style={styles.textFields} >
+                    <View style={{flex: 1}}>
+                        <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+                            <Animated.View style={[styles.background, animatedStyle]}>
+                                <Image style={styles.logo} source={{uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/logo_large.png?alt=media&token=23b05660-b758-4a03-a261-79b3eca54329"}} />
+                                
+                                {/* Text Input */}
+                                <View> 
+                                    {/* SignUp */}
+                                    <View style={[styles.textFields, { display: showSignUp ? 'flex' : 'none' }]}>
                                         <TextInput
+                                            style={[styles.textInput, { borderColor: colors.black}]}
                                             value={email}
                                             placeholder="Enter Email"
                                             autoCapitalize="none"
                                             onChangeText={(text) => setEmail(text)}
                                         />
                                         <TextInput 
-                                            secureTextEntry={true}
+                                            style={[styles.textInput, { borderColor: colors.black}]}
                                             value={password}
+                                            secureTextEntry={true}
                                             placeholder="Enter Password"
                                             autoCapitalize="none"
                                             onChangeText={(text) => setPassword(text)}
                                         />
+                                        <View style={{height: 20}}></View>
                                         <Button color={colors.accept} title="Confirm Sign Up" onPress={signUp} />
                                     </View>
-                                )}
-                                <View style={{width: 15}}/>
-                                <Button color={colors.primary} title="Login" onPress={toggleLogin}/>
-                                {showLogin && (
-                                    <View style={styles.textFields}>
+
+                                    {/* Login */}
+                                    <View style={[styles.textFields, { display: showLogin ? 'flex' : 'none' }]}>
                                         <TextInput
+                                            style={[styles.textInput, { borderColor: colors.black}]}
                                             value={email}
                                             placeholder="Enter Email"
                                             autoCapitalize="none"
-                                            onChangeText={(text) => setEmail(text)} // <- Add this
+                                            onChangeText={(text) => setEmail(text)}
                                         />
                                         <TextInput
+                                            style={[styles.textInput, { borderColor: colors.black}]}
                                             value={password}
                                             placeholder="Enter Password"
                                             secureTextEntry={true}
                                             autoCapitalize="none"
-                                            onChangeText={(text) => setPassword(text)} // <- Add this
+                                            onChangeText={(text) => setPassword(text)}
                                         />
+                                        <View style={{height: 20}}></View>
                                         <Button color={colors.accept} title="Confirm Login" onPress={signIn} />
                                     </View>
-                                )}
-                            </View>
-                            <View style={styles.changePassLine}>
-                                <Pressable onPress={() => navigation.navigate("ForgotPass")}>
-                                    <Text style={styles.forgotPassword}>Forgot Password? Click Here to Change it.</Text>
-                                </Pressable>
-                            </View>
-                        </Animated.View>
-                    </SafeAreaView>
+                                </View>
+
+                                {/* Buttons */}
+                                <View style={styles.buttons}>
+                                    <Button color={colors.grey} title="Signup" onPress={toggleSignup}/>
+                                    <View style={{width: 15}}/>
+                                    <Button color={colors.primary} title="Login" onPress={toggleLogin}/>
+                                </View>
+
+                                {/* Forgot Password*/}
+                                <View style={styles.forgotPasswordLine}>
+                                    <Pressable onPress={() => navigation.navigate("ForgotPass")}>
+                                        <Text style={styles.forgotPassword}>Forgot Password? Click Here to Change it.</Text>
+                                    </Pressable>
+                                </View>
+                            </Animated.View>
+                        </ScrollView>
+                    </View>
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
+        </GestureHandlerRootView>
     );
 }
 
 const styles = StyleSheet.create({
     background: {
         flex: 1,
-        justifyContent: "center",
+        justifyContent: "flex-start",
         alignItems: "center",
+        paddingHorizontal: 20,
     },
     buttons: {
-        position: "absolute",
-        top: "50%",
-        height: 70,
         alignItems: "center",
         flexDirection: "row",
         justifyContent: "center",
+        marginVertical: 20,
     },
     container: {
         flex: 1,
-    },
-    changePassLine: {
-        position: "absolute",
-        top: "60%",
     },
     forgotPassword: {
         color: "blue",
         textDecorationLine: "underline"
     },
+    forgotPasswordLine: {
+        marginTop: 20,
+        alignItems: "center",
+    },
     logo: {
         width: 408,
         height: 128,
-        position: "absolute",
-        top: 10,
+        marginBottom: 150,
+        marginTop: 20
     },
-    signUpButton: {
-        backgroundColor: colors.primary
+    scrollContainer: {
+        flexGrow: 1,
+        justifyContent: 'flex-start',
+        alignItems: "center",
+        paddingBottom: 20,
     },
     textFields: {
-        position: "absolute",
-        bottom: 70,
+        width: "100%",
+        alignItems: "center",
+        marginTop: 10,
+    },
+    textInput: {
+        width: 280,
+        height: 50,
+        fontSize: 18,
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 10,
+        marginBottom: 10,
     },
 })
 

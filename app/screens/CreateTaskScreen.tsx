@@ -4,12 +4,14 @@ import { useSharedValue, useDerivedValue } from 'react-native-reanimated';
 import { addDoc, collection, getDocs } from "firebase/firestore";
 import { Picker } from '@react-native-picker/picker';
 import Slider from '@react-native-community/slider';
+import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
 import CustomMenu from '../config/customMenu';
 import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '../config/authContext';
-import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 
 const { height } = Dimensions.get("window");
 const MID_POSITION = 0;
@@ -33,12 +35,14 @@ const CreateTaskScreen = ({navigation}) => {
     const [customRepeatValue, setCustomRepeatValue] = useState('1');
     const [customRepeatType, setCustomRepeatType] = useState('days');
     const [difficultyIndex, setDifficultyIndex] = useState(2);
+    const [subtasks, setSubtasks] = useState<{ text: string; editable: boolean }[]>([]);
     const difficultyIndexRef = useRef(difficultyIndex);
     const translateY = useSharedValue(MID_POSITION);
     const settings = useContext(SettingsContext);
 
     if (!settings || !user) return null;
 
+    // Handle Date and Time formatting
     const handleDateChange = (text: string) => {
         let cleanedText = text.replace(/[^0-9-]/g, '');
         if (text.length < date.length) {
@@ -77,6 +81,7 @@ const CreateTaskScreen = ({navigation}) => {
         }
     };
 
+    // Saving a Task
     const handleSaveTask = async () => {
         try {
             let repeatData = repeat === "custom"
@@ -90,6 +95,7 @@ const CreateTaskScreen = ({navigation}) => {
                 name: name,
                 date: date,
                 time: time,
+                subtask: subtasks,
                 repeat: repeatData,
                 createdAt: new Date().toISOString(),
                 xp: selectedDifficulty.xp,
@@ -105,6 +111,60 @@ const CreateTaskScreen = ({navigation}) => {
         }
     };
 
+    // Subtask
+    const handleAddSubtaskManually = () => {
+        setSubtasks([...subtasks, { text: `Subtask ${subtasks.length + 1}`, editable: false }]);
+    };
+    
+    // Placeholder function for AI-generated subtasks
+    const handleGenerateSubtasksAI = async () => {
+        if (!name.trim()) {
+            alert("Please enter a task name first.");
+            return;
+        }
+    
+        try {
+            // Let's pretend this is your AI-generated list:
+            const aiGenerated = [
+                "Rinse dishes", 
+                "Apply soap", 
+                "Scrub thoroughly", 
+                "Rinse again", 
+                "Dry and put away"
+            ];
+    
+            const formattedSubtasks = aiGenerated.map((item) => ({
+                text: item,
+                editable: false,
+            }));
+    
+            setSubtasks((prev) => [...prev, ...formattedSubtasks]);
+        } catch (error) {
+            console.error("AI subtask generation failed", error);
+            alert("Could not generate subtasks.");
+        }
+    };
+    
+    // Toggle edit mode for a subtask
+    const toggleEditMode = (index: number) => {
+        setSubtasks(subtasks.map((subtask, i) => 
+            i === index ? { ...subtask, editable: !subtask.editable } : subtask
+        ));
+    };
+    
+    // Update subtask text
+    const updateSubtaskText = (index: number, newText: string) => {
+        setSubtasks(subtasks.map((subtask, i) => 
+            i === index ? { ...subtask, text: newText } : subtask
+        ));
+    };
+    
+    // Delete a subtask
+    const deleteSubtask = (index: number) => {
+        setSubtasks(subtasks.filter((_, i) => i !== index));
+    };
+
+    // Navbar
     const navbarVisible = useDerivedValue(() => {
         return translateY.value <= height * 0.15;
     }, []);    
@@ -131,40 +191,33 @@ const CreateTaskScreen = ({navigation}) => {
                                 {/* TextInputs */}
                                 <View style={styles.formContainer}>
                                     <TextInput
-                                        style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black}]}
+                                        style={[styles.textInput, {width: 410, borderColor: settings.darkMode ? colors.white : colors.black, alignSelf: 'stretch'}]}
                                         value={name}
                                         onChangeText={(text) => {setName(text)}}
                                         placeholder="Name"
-                                        placeholderTextColor={settings.darkMode ? colors.white : colors.black}
                                         autoCapitalize="none"
                                     />
                                     <View style={styles.row}>
-                                        <View style={styles.fixedInputContainer}>
-                                            <TextInput 
-                                                style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black}]}
-                                                value={date}
-                                                onChangeText={handleDateChange}
-                                                placeholder="YYYY-MM-DD"
-                                                placeholderTextColor={settings.darkMode ? colors.white : colors.black}
-                                                keyboardType="numeric"
-                                                maxLength={10}
-                                            />
-                                        </View>
-                                        <View style={styles.fixedInputContainer}>
-                                            <TextInput
-                                                style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black}]}
-                                                value={time}
-                                                onChangeText={handleTimeChange}
-                                                placeholder="HH:MM AM/PM"
-                                                placeholderTextColor={settings.darkMode ? colors.white : colors.black}
-                                                keyboardType="default"
-                                                maxLength={8}
-                                            />
-                                        </View>
+                                        <TextInput 
+                                            style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black, alignSelf: 'stretch'}]}
+                                            value={date}
+                                            onChangeText={handleDateChange}
+                                            placeholder="YYYY-MM-DD"
+                                            keyboardType="numeric"
+                                            maxLength={10}
+                                        />
+                                        <TextInput
+                                            style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black, alignSelf: 'stretch'}]}
+                                            value={time}
+                                            onChangeText={handleTimeChange}
+                                            placeholder="HH:MM AM/PM"
+                                            keyboardType="default"
+                                            maxLength={8}
+                                        />
                                     </View>
                                 </View>
-                                {/* Repeat Select */}
 
+                                {/* Repeat Select */}
                                 <View style={[styles.sectionContainer, { marginTop: 20 }]}>
                                     <Text style={{ textDecorationLine: "underline", fontSize: 25, color: settings.darkMode ? colors.white : colors.black }}>Repeat?</Text>
                                     <View style={[styles.pickerWrapper, { borderColor: settings.darkMode ? colors.white : colors.black }]}>
@@ -250,6 +303,52 @@ const CreateTaskScreen = ({navigation}) => {
                                         Reward: {difficultyLevels[difficultyIndex].xp} XP | {difficultyLevels[difficultyIndex].balance} Coins
                                     </Text>
                                 </View>
+
+                                {/* Subtasking */}
+                                <View style={styles.subtaskContainer}>
+                                    {/* Header */}
+                                    <View style={styles.subtaskHeader}>
+                                        <Text style={{ textDecorationLine: "underline", fontSize: 25, color: settings.darkMode ? colors.white : colors.black }}>
+                                            Subtasks
+                                        </Text>
+                                    </View>
+
+                                    <View style={{width: "100%", height: 1, backgroundColor: colors.black, marginVertical: 5}}></View>
+
+                                    {/* Buttons for AI and Manual Subtasks */}
+                                    <View style={styles.subtaskButtonContainer}>
+                                        <Pressable onPress={handleGenerateSubtasksAI}>
+                                            <MaterialCommunityIcons name="robot" size={40} color={colors.black} />
+                                        </Pressable>
+                                        <Pressable onPress={handleAddSubtaskManually}>
+                                            <Ionicons name="create-outline" size={40} color={colors.black} />
+                                        </Pressable>
+                                    </View>
+
+                                    {/* Display Subtasks */}
+                                    {subtasks.map((subtask, index) => (
+                                        <View key={index} style={styles.subtaskItem}>
+                                            {subtask.editable ? (
+                                                <TextInput
+                                                    style={styles.editSubtaskInput}
+                                                    value={subtask.text}
+                                                    onChangeText={(text) => updateSubtaskText(index, text)}
+                                                    onBlur={() => toggleEditMode(index)}
+                                                    autoFocus
+                                                />
+                                            ) : (
+                                                <Pressable onPress={() => toggleEditMode(index)} style={{ flex: 1 }}>
+                                                    <Text style={styles.subtaskText}>{subtask.text}</Text>
+                                                </Pressable>
+                                            )}
+                                            
+                                            {/* Delete Button */}
+                                            <Pressable onPress={() => deleteSubtask(index)} style={styles.deleteButton}>
+                                                <Ionicons name="close-circle" size={25} color="red" />
+                                            </Pressable>
+                                        </View>
+                                    ))}
+                                </View>
                             </View>
                         </ScrollView>
 
@@ -278,15 +377,10 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    fixedInputContainer: {
-        width: 'auto',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
     formContainer: {
         width: '90%',
         marginTop: 40,
-        alignItems: 'center',
+        alignItems: 'flex-start',
     },    
     headerContainer: {
         flexDirection: 'row',
@@ -327,8 +421,8 @@ const styles = StyleSheet.create({
     },
     row: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
+        justifyContent: "flex-start",
+        gap: 10,
         marginTop: 10,
     },
     saveTask: {
@@ -340,16 +434,59 @@ const styles = StyleSheet.create({
     scrollContainer: {
         flexGrow: 1,
         justifyContent: 'flex-start',
-        alignItems: "center",
         paddingBottom: 20,
     },
     sectionContainer: {
-        width: '85%',
+        width: '90%',
         marginTop: 30,
+        alignItems: "flex-start",
+    },
+    subtaskContainer: {
+        width: '90%',
+        marginTop: 30,
+        borderRadius: 10,
+        alignItems: 'flex-start',
+    },
+    subtaskHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 10,
+    },
+    subtaskButtonContainer: {
+        flexDirection: "row",
+        justifyContent: "space-around",
+        alignSelf: "flex-end",
+        gap: 15,
+        marginBottom: 10,
+    },
+    subtaskItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        borderRadius: 5,
+        marginBottom: 5,
+    },
+    subtaskText: {
+        fontSize: 18,
+        flex: 1,
+    },
+    editSubtaskInput: {
+        borderBottomWidth: 1,
+        borderColor: colors.primary,
+        fontSize: 18,
+        flex: 1,
+        padding: 5,
+    },
+    deleteButton: {
+        marginLeft: 10,
     },
     textInput: {
+        width: 200,
+        height: 50,
         fontSize: 25,
         borderWidth: 1,
-        borderRadius: 8
+        borderRadius: 8,
+        padding: 10,
+        marginBottom: 10,
     },
 })
