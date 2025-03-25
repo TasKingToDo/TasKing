@@ -1,10 +1,10 @@
 ﻿import React, { useState, useCallback, memo, useEffect, useContext } from 'react';
 import {
-  View, ScrollView, Image, Text, TextInput,
-  Dimensions, StyleSheet, FlatList, TouchableOpacity, Pressable
+  View, Image, ImageBackground, Text, Alert,
+  Dimensions, StyleSheet, FlatList, Pressable,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { doc, setDoc, onSnapshot, query, collection, where } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 //npm install react-native-tab-view
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
@@ -26,18 +26,68 @@ const numColumns = 3;
 //defining expected props for ShopMenu component
 type ShopMenuProps = {
   category: string;
-  updateEquipped: (category: string, imageUrl: string) => void;
+  equipItem: (category: string, imageUrl: string) => void;
+  unlockItem: (category: string, imageUrl: string) => void;
   data: { id: number; imageUrl: string }[];
 };
 
+//reorder data such that FlatList will display owned items before unowned
+function useOrderedData (category, data) {
+  //Fetch user id
+  const { user } = useContext(authContext);
+  //Ordered data
+  const [orderedData, setOrderedData] = useState([]);
+  //Unowned items
+  const [unownedItems, setUnownedItems] = useState([]);
+
+  //Fetch data from db
+  useEffect(() => {
+    //Fetch user data
+    const userDocRef = doc(FIREBASE_DB, "users", user.uid);
+    //err catch
+    if (!user || !userDocRef) { return; }
+    //Derive db category name
+    const ownedCategory = "owned" + category;
+
+    //Fetch owned items data from db
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        //container of ordered data - owned shows up first in list
+        let preorderedData = docSnap.get(ownedCategory) || [];
+        //container of unowned items
+        let unownedData = [];
+
+        //snapshot.forEach(docsnap => {})
+        //add unowned items to end of the list
+        for (let item of data) {
+          //if item is not in orderedData (therefore not owned)
+          if (!preorderedData.includes(item.imageUrl)) {
+            //add to end of orderedData
+            preorderedData = [...preorderedData, item.imageUrl];
+            //add to unownedItems
+            unownedData = [...unownedData, item.imageUrl];
+          }
+        }
+        setOrderedData(preorderedData);
+        setUnownedItems(unownedData);
+      }
+    });
+  }, [user, category, data]);
+  return [ orderedData, unownedItems ];
+}
+
 //Tab menu flatlist base - sent data to display
 //renders shop and updates equipped items when pressed
-const ShopMenu: React.FC<ShopMenuProps> = memo(({ category, updateEquipped, data=[] }) => {
+const ShopMenu: React.FC<ShopMenuProps> = memo(({ category, equipItem, unlockItem, data = [] }) => {
+  //Reordering data and figuring out which ones are new
+  const [orderedData, unownedItems] = useOrderedData(category, data);
+
   return (
+    //render flatlist
     <FlatList
       style={styles.flatListContainer}
       numColumns={numColumns}
-      data={data.flat()}
+      data={orderedData}
       keyExtractor={(item, index) => item.id?.toString() || index.toString()}
       renderItem={({ item }) => (
         <View style={styles.flatListContainer}>
@@ -45,8 +95,11 @@ const ShopMenu: React.FC<ShopMenuProps> = memo(({ category, updateEquipped, data
           style={({ pressed }) => ({
             backgroundColor: pressed ? colors.emphasis : colors.primarySoft,
           })}
-            onPress={() => updateEquipped(category, item.imageUrl)}>
-          <Image source={{ uri: item.imageUrl }} style={styles.thumbnails} />
+            onPress={() => unownedItems.includes(item) ? unlockItem(category, item) : equipItem(category, item)}>
+            <ImageBackground source={{ uri: item }} style={styles.blockedThumbnails}>
+              {unownedItems.includes(item) && (<Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/blocked_item.png?alt=media&token=eb83ac1f-cff7-48de-81d6-8aed6f168850" }}
+                resizeMode="cover" style={styles.thumbnails} />)}
+            </ImageBackground>
           </Pressable>
         </View>
       )}
@@ -67,6 +120,13 @@ const ShopScreen = () => {
   //Instantiate eqipped items
   const [equipped, setEquipped] = useState({});
 
+  //Instantiate owned items
+  const [ownedShirt, setOwnedShirt] = useState({});
+  const [ownedPants, setOwnedPants] = useState({});
+  const [ownedHat, setOwnedHat] = useState({});
+  const [ownedShoes, setOwnedShoes] = useState({});
+  const [ownedAcc, setOwnedAcc] = useState({});
+
   //state management
   // Fetch Balance from Database
   const [balance, setBalance] = useState(0);
@@ -78,9 +138,14 @@ const ShopScreen = () => {
     //fetch data
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
-        //coin balance
+        //set starting data from db
         setBalance(docSnap.data().balance || 0);
         setEquipped(docSnap.data().equipped || {});
+        setOwnedShirt(docSnap.data().ownedshirt || {});
+        setOwnedPants(docSnap.data().ownedpants || {});
+        setOwnedHat(docSnap.data().ownedhat || {});
+        setOwnedShoes(docSnap.data().ownedshoes || {});
+        setOwnedAcc(docSnap.data().ownedacc || {});
       } else {
         console.log("No such user document!");
       }
@@ -91,15 +156,105 @@ const ShopScreen = () => {
     return () => unsubscribe(); // Cleanup the listener on component unmount
   }, [user]);
 
-  // Update equipped item in Firestore
-  const updateEquipped = useCallback((category, url) => {
-    if (!userDocRef) return; // Prevent errors
+  // Update equipped item in db
+  const equipItem = useCallback((category, url) => {
+    //err catch
+    if (!userDocRef) return;
+
     setEquipped((prev) => {
       const newEquipped = { ...prev, [category]: url };
       setDoc(userDocRef, { equipped: newEquipped }, { merge: true });
       return newEquipped;
     });
-  }, [user, userDocRef]);
+  }, [userDocRef]);
+
+  //Attempt to unlock item
+  const unlockItem = useCallback((category, url) => {
+    //err catch
+    if (!userDocRef) return;
+
+    //temporary price variable
+    let price = 35;
+
+    //display popup that confirms user decision
+    Alert.alert("", "Unlock item?", [
+      {
+        text: "Unlock",
+        onPress: () => {
+          //if insufficient coins, abort action w/ error message
+          if (balance < price) {
+            Alert.alert("Insufficient coins!");
+          } else {
+            updateOwned(category, url, price);
+          }
+        },
+      },
+      {
+        text: "Nevermind",
+        onPress: () => { return; },
+      }
+    ],
+      {
+        cancelable: true,
+        onDismiss: () => { return; },
+      },
+    );
+    
+      
+    
+  }, [userDocRef]);
+
+  const updateOwned = useCallback((category, url, price) => {
+    //add unlocked item to owned items in db
+    switch (category) {
+      case "shirt":
+        setOwnedShirt((prev) => {
+          const nowOwned = [...prev, url];
+          setDoc(userDocRef, { ownedshirt: nowOwned }, { merge: true });
+          return nowOwned;
+        });
+        break;
+      case "pants":
+        setOwnedPants((prev) => {
+          const nowOwned = [...prev, url];
+          setDoc(userDocRef, { ownedpants: nowOwned }, { merge: true });
+          return nowOwned;
+        });
+        break;
+      case "hat":
+        setOwnedHat((prev) => {
+          const nowOwned = [...prev, url];
+          setDoc(userDocRef, { ownedhat: nowOwned }, { merge: true });
+          return nowOwned;
+        });
+        break;
+      case "shoes":
+        setOwnedShoes((prev) => {
+          const nowOwned = [...prev, url];
+          setDoc(userDocRef, { ownedshoes: nowOwned }, { merge: true });
+          return nowOwned;
+        });
+        break;
+      case "acc":
+        setOwnedAcc((prev) => {
+          const nowOwned = [...prev, url];
+          setDoc(userDocRef, { ownedacc: nowOwned }, { merge: true });
+          return nowOwned;
+        });
+        break;
+      default:
+        console.log("ERR: unlockItem");
+    }
+
+    //change coin balance
+    setBalance((prev) => {
+      const newBalance = prev - price;
+      setDoc(userDocRef, { balance: newBalance }, {merge: true});
+      return newBalance;
+    });
+    return [];
+
+  }, [userDocRef]);
 
   return (
     <SafeAreaProvider style={styles.background}>
@@ -130,12 +285,12 @@ const ShopScreen = () => {
                   tabBarActiveTintColor: colors.black,
                   tabBarInactiveTintColor: colors.white,
                 }}>
-                <Tab.Screen name="🧍" children={() => <ShopMenu category="body" updateEquipped={updateEquipped} data={bodyData} />} />
-                <Tab.Screen name="👕" children={() => <ShopMenu category="shirt" updateEquipped={updateEquipped} data={shirtData} />} />
-                <Tab.Screen name="👖" children={() => <ShopMenu category="pants" updateEquipped={updateEquipped} data={pantsData} />} />
-                <Tab.Screen name="👑" children={() => <ShopMenu category="hat" updateEquipped={updateEquipped} data={hatData} />} />
-                <Tab.Screen name="👟" children={() => <ShopMenu category="shoes" updateEquipped={updateEquipped} data={shoesData} />} />
-                <Tab.Screen name="🌹" children={() => <ShopMenu category="acc" updateEquipped={updateEquipped} data={accData} />} />
+                <Tab.Screen name="🧍" children={() => <ShopMenu category="body" equipItem={equipItem} unlockItem={unlockItem} data={bodyData} />} />
+                <Tab.Screen name="👕" children={() => <ShopMenu category="shirt" equipItem={equipItem} unlockItem={unlockItem} data={shirtData} />} />
+                <Tab.Screen name="👖" children={() => <ShopMenu category="pants" equipItem={equipItem} unlockItem={unlockItem} data={pantsData} />} />
+                <Tab.Screen name="👑" children={() => <ShopMenu category="hat" equipItem={equipItem} unlockItem={unlockItem} data={hatData} />} />
+                <Tab.Screen name="👟" children={() => <ShopMenu category="shoes" equipItem={equipItem} unlockItem={unlockItem} data={shoesData} />} />
+                <Tab.Screen name="🌹" children={() => <ShopMenu category="acc" equipItem={equipItem} unlockItem={unlockItem} data={accData} />} />
                 
               </Tab.Navigator>
             </NavigationContainer>
@@ -191,11 +346,16 @@ const styles = StyleSheet.create({
     height: 128,
     resizeMode: 'contain',
   },
+  blockedThumbnails: {
+    width: 128, 
+    height: 128,
+    resizeMode: 'contain',
+  },
   bgImage: {
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height / 2,
     resizeMode: 'cover',
-
+    
   },
   image: {
     width: Dimensions.get('window').width * (2/3),
