@@ -79,7 +79,7 @@ const OpeningScreen = ({navigation}) => {
                     balance: 0,
                     email: email,
                     level: 0,
-                    ownedBodies: [
+                    ownedbody: [
                         //all skin tones unlocked by default
                         bodyData[0].imageUrl,
                         bodyData[1].imageUrl,
@@ -87,11 +87,11 @@ const OpeningScreen = ({navigation}) => {
                         bodyData[3].imageUrl,
                         bodyData[4].imageUrl,
                     ],
-                    ownedShirts: [],
-                    ownedPants: [],
-                    ownedHats: [],
-                    ownedShoes: [],
-                    ownedAccs: [],
+                    ownedshirt: ["null"],
+                    ownedpants: ["null"],
+                    ownedhat: ["null"],
+                    ownedshoes: ["null"],
+                    ownedacc: ["null"],
                     equipped: {
                         body: bodyData[3].imageUrl,
                         shirt: "null",
