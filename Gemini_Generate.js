@@ -5,7 +5,7 @@ const DEBUG = false;
 
 
 // Gemini setup
-const API_KEY = "AIzaSyCUc53d2u7oETlQceWvqwPNgPSAXcYtp9c";
+const API_KEY = "API_KEY_HERE";
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
 async function getGeminiResponse(prompt) {
