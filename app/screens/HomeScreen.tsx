@@ -2,11 +2,11 @@ import React, { useContext, useEffect, useState } from 'react';
 import { View, StyleSheet, Pressable, Text, Dimensions } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS, useAnimatedReaction } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
-import Toast from 'react-native-toast-message';
 import * as Progress from 'react-native-progress';
+
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
 import TaskScreen from './TaskScreen';
@@ -14,7 +14,6 @@ import ShopScreen from './ShopScreen';
 import CustomMenu from '../config/customMenu';
 import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '../config/authContext';
-import toastConfig from '../config/toastConfig';
 
 const { height } = Dimensions.get("window");
 const NAV_BAR_HEIGHT = 75;
@@ -29,6 +28,7 @@ const HomeScreen = ({navigation}) => {
     const [xp, setXp] = useState(0);
     const [level, setLevel] = useState(0);
     const [xpProgress, setXpProgress] = useState(0);
+    const [navbarVisible, setNavbarVisible] = useState(true);
 
     const calculateLevel = (xp: number) => {
         let level = 0;
@@ -109,7 +109,14 @@ const HomeScreen = ({navigation}) => {
         transform: [{ translateY: translateY.value }]
     }));
     
-    const navbarVisible = translateY.value <= height * 0.15;
+    useAnimatedReaction(
+        () => translateY.value,
+        (currentY: number) => {
+          const visible = currentY <= height * 0.15;
+          runOnJS(setNavbarVisible)(visible);
+        },
+        []
+    );
 
     const navbarAnimatedStyle = useAnimatedStyle(() => ({
         opacity: translateY.value > height * 0.15 ? 0 : 1,
@@ -193,7 +200,6 @@ const HomeScreen = ({navigation}) => {
                     </Animated.View>
                 </GestureHandlerRootView>
             </SafeAreaView>
-            <Toast config={toastConfig} />
         </SafeAreaProvider>
     );
 };
@@ -276,6 +282,7 @@ const styles = StyleSheet.create({
         height: NAV_BAR_HEIGHT,
         width: "100%",
         paddingHorizontal: 15,
+        zIndex: 5
     },
     progressBarContainer: {
         position: "relative",

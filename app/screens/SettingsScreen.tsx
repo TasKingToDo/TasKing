@@ -2,10 +2,9 @@ import React, { useState, useContext } from 'react';
 import { Button, Text, View, Switch, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { getAuth, signOut, updatePassword } from 'firebase/auth';
 import { getFirestore, doc, updateDoc } from 'firebase/firestore';
-import Toast from 'react-native-toast-message';
+
 import { SettingsContext } from '../config/SettingsContext';
 import colors from '../config/colors';
-import toastConfig from '../config/toastConfig';
 
 const SettingsScreen = ({ navigation }) => {
   const settings = useContext(SettingsContext);
@@ -133,7 +132,6 @@ const SettingsScreen = ({ navigation }) => {
                 <Text style={styles.buttonText}>Update Password</Text>
               </TouchableOpacity>
             </View>
-            <Toast config={toastConfig} />
           </View>
         </ScrollView>
       </TouchableWithoutFeedback>

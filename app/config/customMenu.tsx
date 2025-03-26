@@ -14,33 +14,52 @@ const CustomMenu = ({navbarVisible}) => {
     const [showPopover, setShowPopover] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
 
+    // Resolution progress
+    const [currentResolution, setCurrentResolution] = useState("4-bit");
+    const [progress, setProgress] = useState(0);
+    const [unlockedResolutions, setUnlockedResolutions] = useState(["4-bit"]);
+
     // Fetch Balance from Database
-      const [balance, setBalance] = useState(0);
-      const { user } = useContext(authContext);
+    const [balance, setBalance] = useState(0);
+    const { user } = useContext(authContext);
     
-      useEffect(() => {
+    useEffect(() => {
         if (!user) return;
-    
+      
         const userDocRef = doc(FIREBASE_DB, "users", user.uid);
-    
-        const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+        const statsDocRef = doc(FIREBASE_DB, "stats", user.uid);
+      
+        // Listen for changes in the user's main data (balance, current resolution)
+        const unsubscribeUser = onSnapshot(userDocRef, (docSnap) => {
             if (docSnap.exists()) {
-                setBalance(docSnap.data().balance || 0);
-                setCurrentResolution(docSnap.data().currentresolution || "4-bit"); // Fetch current resolution
+                const data = docSnap.data();
+                setBalance(data.balance || 0);
+                setCurrentResolution(data.currentresolution || "4-bit");
             } else {
                 console.log("No such user document!");
             }
         }, (error) => {
             console.error("Error fetching user data:", error);
         });
-    
-        return () => unsubscribe(); // Cleanup listener on unmount
-    }, [user]);    
-
-    // Resolution progress
-    const [currentResolution, setCurrentResolution] = useState("4-bit");
-    const [progress, setProgress] = useState(0); // Example progress (50% towards 8-bit)
-    const [unlockedResolutions, setUnlockedResolutions] = useState(["4-bit"]); // 8-bit and 16-bit locked initially
+      
+        // Listen for changes in the user's stats (tasks completed -> progress)
+        const unsubscribeStats = onSnapshot(statsDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const statsData = docSnap.data();
+                setProgress(statsData.tasksCompleted || 0);
+            } else {
+                console.log("No stats document found.");
+            }
+        }, (error) => {
+            console.error("Error fetching stats data:", error);
+        });
+      
+        // Cleanup both listeners
+        return () => {
+          unsubscribeUser();
+          unsubscribeStats();
+        };
+    }, [user]);
 
     const handleResolutionSelect = async (resolution) => {
         if (!user) {
@@ -69,16 +88,6 @@ const CustomMenu = ({navbarVisible}) => {
         } else if (resolution === "16-bit") {
             cost = 250;
             requiredProgress = 400;
-        }
-    
-        if (progress < requiredProgress) {
-            alert(`You need at least ${requiredProgress} progress to unlock ${resolution}.`);
-            return;
-        }
-    
-        if (balance < cost) {
-            alert(`You need at least ${cost} balance to unlock ${resolution}.`);
-            return;
         }
     
         // Deduct balance, unlock resolution, and update Firestore
@@ -141,7 +150,7 @@ const CustomMenu = ({navbarVisible}) => {
                 isVisible={showPopover}
                 onRequestClose={handleCloseMenu}
                 backgroundStyle={{backgroundColor: 'transparent'}}
-                arrowSize={{width: 55, height: 10}}
+                arrowSize={{width: 25, height: 15}}
                 popoverStyle={{backgroundColor: settings.darkMode ? colors.secondary : colors.primary}}>
                 <View>
                     <Pressable style={styles.buttonItems} onPress={handleFriendsNav}>

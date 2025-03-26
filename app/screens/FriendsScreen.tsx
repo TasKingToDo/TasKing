@@ -4,13 +4,12 @@ import { useSharedValue, useDerivedValue} from 'react-native-reanimated';
 import { Entypo, FontAwesome } from '@expo/vector-icons';
 import { collection, doc, getDoc, updateDoc, query, where, getDocs, addDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import Toast from 'react-native-toast-message';
+
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
 import CustomMenu from '../config/customMenu';
 import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '../config/authContext';
-import toastConfig from '../config/toastConfig';
-
 
 const { height } = Dimensions.get("window");
 const MID_POSITION = 0;
@@ -30,6 +29,7 @@ const FriendsScreen = ({ navigation }) => {
     }, []);
     const [selectedFriend, setSelectedFriend] = useState(null);
     const [friendModalVisible, setFriendModalVisible] = useState(false);
+    const [friendStats, setFriendStats] = useState(null);
     const settings = useContext(SettingsContext);
 
     if (!settings || !user) return null;
@@ -40,7 +40,7 @@ const FriendsScreen = ({ navigation }) => {
         const userRef = doc(FIREBASE_DB, "users", user.uid);
         const unsubscribeFriends = onSnapshot(userRef, async (userSnap) => {
             if (!userSnap.exists()) return;
-            const friendIds = userSnap.data().Friends || [];
+            const friendIds = userSnap.data().friends || [];
         
             const friendData = await Promise.all(friendIds.map(async (id) => {
                 const friendDoc = await getDoc(doc(FIREBASE_DB, "users", id));
@@ -52,6 +52,7 @@ const FriendsScreen = ({ navigation }) => {
                         level: data.level || 0,
                         pfp: data.pfp || null,
                         equipped: data.equipped || {},
+                        online: data.online ?? false,
                     };
                 } else {
                     return {
@@ -59,6 +60,7 @@ const FriendsScreen = ({ navigation }) => {
                         username: "Unknown",
                         level: 0,
                         pfp: null,
+                        online: false,
                     };
                 }
             }));
@@ -199,17 +201,16 @@ const FriendsScreen = ({ navigation }) => {
             const senderData = senderSnap.data();
     
             await updateDoc(userRef, {
-                Friends: [...(userData.Friends || []), senderId]
+                friends: [...(userData.friends || []), senderId]
             });
     
             await updateDoc(senderRef, {
-                Friends: [...(senderData.Friends || []), user.uid]
+                friends: [...(senderData.friends || []), user.uid]
             });
     
             await deleteDoc(doc(FIREBASE_DB, "friendRequests", requestId));
     
             setFriendRequests((prevRequests) => prevRequests.filter((req) => req.id !== requestId));
-            setFriends((prevFriends) => [...prevFriends, { id: senderId, username: senderData.username, pfp: senderData.pfp }]);
     
         } catch (error) {
             console.error("Error accepting friend request:", error);
@@ -250,16 +251,40 @@ const FriendsScreen = ({ navigation }) => {
             console.error("Error canceling friend request:", error);
             Alert.alert("Error", "Something went wrong. Please try again.");
         }
-    };    
+    };  
     
     const renderFriendItem = ({ item }) => {
         return (
             <Pressable 
                 style={styles.friendItem} 
-                onPress={() => {
-                    setSelectedFriend(item);
+                onPress={async () => {
+                    // Open modal and show basic data
+                    setSelectedFriend({
+                        ...item,
+                        online: item.online ?? false, // ✅ Preserve .online in modal
+                      });                      
                     setFriendModalVisible(true);
-                }}
+                
+                    // Fetch stats
+                    const statsRef = doc(FIREBASE_DB, "stats", item.id);
+                    const statsSnap = await getDoc(statsRef);
+                    if (statsSnap.exists()) {
+                        setFriendStats(statsSnap.data());
+                    } else {
+                        setFriendStats(null);
+                    }
+                
+                    // Fetch lastLoginDate from a user's stats document
+                    const userDoc = await getDoc(doc(FIREBASE_DB, "stats", item.id));
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+
+                        setSelectedFriend(prev => ({
+                            ...prev,
+                            lastLoginDate: userData.lastLoginDate ? new Date(userData.lastLoginDate) : null,
+                        }));
+                    }
+                }}            
             >
                 <View style={styles.friendCardContent}>
                     {/* Avatar or placeholder */}
@@ -279,6 +304,64 @@ const FriendsScreen = ({ navigation }) => {
             </Pressable>
         );
     };
+
+    const handleRemoveFriend = async (friendId: string) => {
+        try {
+            const userRef = doc(FIREBASE_DB, "users", user.uid);
+            const friendRef = doc(FIREBASE_DB, "users", friendId);
+    
+            const [userSnap, friendSnap] = await Promise.all([
+                getDoc(userRef),
+                getDoc(friendRef)
+            ]);
+    
+            if (!userSnap.exists() || !friendSnap.exists()) {
+                Alert.alert("Error", "Friend data not found.");
+                return;
+            }
+    
+            const userData = userSnap.data();
+            const friendData = friendSnap.data();
+    
+            // Remove friend from your list
+            const updatedUserFriends = (userData.friends || []).filter(id => id !== friendId);
+            await updateDoc(userRef, { friends: updatedUserFriends });
+    
+            // Remove you from their list
+            const updatedFriendFriends = (friendData.friends || []).filter(id => id !== user.uid);
+            await updateDoc(friendRef, { friends: updatedFriendFriends });
+    
+            // Close modal and reset selected friend
+            setFriendModalVisible(false);
+            setSelectedFriend(null);
+            setFriendStats(null);
+    
+            Toast.show({
+                type: 'success',
+                text1: 'Friend Removed',
+                position: 'top'
+            });
+        } catch (error) {
+            console.error("Error removing friend:", error);
+            Alert.alert("Error", "Something went wrong while removing the friend.");
+        }
+    };    
+
+    const formatLastLogin = (date: Date | null, isOnline: boolean): string => {
+        if (isOnline) return "🟢 Online";
+        if (!date || isNaN(date.getTime())) return "Offline";
+    
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMinutes = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+        if (diffMinutes < 60) return `Last on ${diffMinutes} min ago`;
+        if (diffHours < 24) return `Last on ${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+        if (diffDays === 1) return "Last on Yesterday";
+        return `Last on ${diffDays} days ago`;
+    };       
 
     return (
         <View style={{flex: 1}}>
@@ -368,16 +451,25 @@ const FriendsScreen = ({ navigation }) => {
                 animationType="slide"
                 transparent={true}
                 visible={friendModalVisible}
-                onRequestClose={() => setFriendModalVisible(false)}
+                onRequestClose={() => {
+                    setFriendModalVisible(false);
+                    setFriendStats(null);
+                }}
             >
                 <View style={styles.modalBackground}>
                     <View style={styles.modalContainer}>
                         {selectedFriend && (
                             <>
                                 {/* Top: Friends Name and Level */}
-                                <View>
-                                    <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{selectedFriend.username}</Text>
-                                    <Text style={{ fontSize: 16}}>Level {selectedFriend.level}</Text>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                    <View>
+                                        <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{selectedFriend.username}</Text>
+                                        <Text style={{ fontSize: 16 }}>Level {selectedFriend.level}</Text>
+                                    </View>
+                                    <Text style={{ fontSize: 12, color: selectedFriend.online ? 'green' : 'gray' }}>
+                                        {formatLastLogin(selectedFriend.lastLoginDate, selectedFriend.online)}
+                                    </Text>
+
                                 </View>
 
                                 <View style={{ flexDirection: "row", width: "100%", marginTop: 10 }}>
@@ -398,12 +490,38 @@ const FriendsScreen = ({ navigation }) => {
 
                                     {/* Right: Stats */}
                                     <View style={{ flex: 1 }}>
-                                        <Text> Stats Here...</Text>
+                                    {friendStats ? (
+                                        <>
+                                            <Text>Total Task Completed {friendStats.tasksCompleted ?? 0}</Text>
+                                            <Text>Tasks This Week: {friendStats.tasksCompletedThisWeek ?? 0}</Text>
+                                            <Text>Current Streak: {friendStats.currentStreak ?? 0}</Text>
+                                            <Text>Longest Streak: {friendStats.longestStreak ?? 0}</Text>
+                                            <Text>Days Active: {friendStats.daysActive ?? 0}</Text>
+                                            <Text>Total XP Earned {friendStats.totalXpEarned ?? 0}</Text>
+                                            <Text>Total Coins Earned {friendStats.totalBalanceEarned ?? 0}</Text>
+                                        </>
+                                    ) : (
+                                        <Text>No stats available</Text>
+                                    )}
                                     </View>
                                 </View>
 
-                                <View style={{ marginTop: 15, alignSelf: "center" }}>
-                                    <Button title="Close" onPress={() => setFriendModalVisible(false)} />
+                                <View style={{ marginTop: 15, alignSelf: "center", flexDirection: "row", gap: 10}}>
+                                    <Button
+                                        title="Remove Friend"
+                                        onPress={() => {
+                                            Alert.alert(
+                                                "Remove Friend",
+                                                `Are you sure you want to remove ${selectedFriend.username}?`,
+                                                [
+                                                    { text: "Cancel", style: "cancel" },
+                                                    { text: "Remove", style: "destructive", onPress: () => handleRemoveFriend(selectedFriend.id) }
+                                                ]
+                                            );
+                                        }}
+                                        color={colors.decline}
+                                    />
+                                    <Button title="Close" color={colors.secondary} onPress={() => setFriendModalVisible(false)} />
                                 </View>
                             </>
                         )}
@@ -444,7 +562,6 @@ const FriendsScreen = ({ navigation }) => {
                     </View>
                 </View>
             </Modal>
-            <Toast config={toastConfig}/>
         </View>
     );
 };
@@ -555,7 +672,7 @@ const styles = StyleSheet.create({
         padding: 20,
         backgroundColor: "white",
         borderRadius: 10,
-        alignItems: "flex-start",
+        alignItems: "center",
     },
     modalTitle: {
         fontSize: 20,
