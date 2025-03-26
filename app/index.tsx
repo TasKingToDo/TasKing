@@ -18,6 +18,8 @@ import { SettingsProvider } from "./config/SettingsContext";
 import { AuthProvider, authContext } from "./config/authContext";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import toastConfig from "./config/toastConfig";
+import Toast from "react-native-toast-message";
 
 //creating stack navigator
 const Stack = createNativeStackNavigator();
@@ -58,6 +60,7 @@ const Index = () => {
     <GestureHandlerRootView style={{flex: 1}}>
       <AuthProvider>
         <RootNavigator />
+        <Toast config={toastConfig} />
       </AuthProvider>
     </GestureHandlerRootView>
   );

@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, FlatList, Animated, Pressable} from 'react-nati
 import { Picker } from '@react-native-picker/picker';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, deleteDoc, doc, getDocs, updateDoc, query, where, getDoc, onSnapshot } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, updateDoc, query, where, getDoc, onSnapshot, increment, setDoc } from "firebase/firestore";
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
@@ -13,6 +13,7 @@ import { authContext } from '../config/authContext';
 
 type Subtask = {
     text: string;
+    completed: boolean;
 }
 
 type Task = {
@@ -51,7 +52,10 @@ const TaskScreen = () => {
                     repeat: data.repeat,
                     completed: data.completed,
                     createdAt: data.createdAt,
-                    subtasks: data.subtask ?? [] // fallback to empty array if undefined
+                    subtasks: (data.subtask ?? []).map((sub: any) => ({
+                        text: sub.text,
+                        completed: sub.completed ?? false,
+                    }))                    
                 };
             });
     
@@ -70,41 +74,51 @@ const TaskScreen = () => {
         }
     };
 
-    const handleCompleteTask = async (task: Task) => {
+    const updateTaskCompletion = async (task: Task, markComplete: boolean) => {
         if (!user) return;
     
-        try {
-            const taskRef = doc(FIREBASE_DB, "tasks", task.id);
-            const userRef = doc(FIREBASE_DB, "users", user.uid);
+        const taskRef = doc(FIREBASE_DB, "tasks", task.id);
+        const userRef = doc(FIREBASE_DB, "users", user.uid);
+        const statsRef = doc(FIREBASE_DB, "stats", user.uid);
     
-            const taskSnap = await getDoc(taskRef);
-            if (!taskSnap.exists()) {
-                console.error("Task not found!");
-                return;
-            }
+        const [taskSnap, userSnap, statsSnap] = await Promise.all([
+            getDoc(taskRef),
+            getDoc(userRef),
+            getDoc(statsRef)
+        ]);
     
-            const taskData = taskSnap.data();
-            const taskXp = taskData.xp || 0;
-            const taskBalance = taskData.balance || 0;
+        if (!taskSnap.exists() || !userSnap.exists()) {
+            console.error("Task or user not found!");
+            return;
+        }
     
-            const userSnap = await getDoc(userRef);
-            if (!userSnap.exists()) {
-                console.error("User not found!");
-                return;
-            }
+        const taskData = taskSnap.data();
+        const userData = userSnap.data();
+        const statsData = statsSnap.exists() ? statsSnap.data() : null;
     
-            const userData = userSnap.data();
-            const isTaskCompleted = task.completed;
+        const taskXp = taskData.xp || 0;
+        const taskBalance = taskData.balance || 0;
+        const now = new Date();
+        const todayStr = new Date().toLocaleDateString('en-CA'); // 'YYYY-MM-DD'
+        const wasRewarded = taskData.rewarded || false;
     
-            const newXp = isTaskCompleted ? (userData.xp || 0) - taskXp : (userData.xp || 0) + taskXp;
-            const newBalance = isTaskCompleted ? (userData.balance || 0) - taskBalance : (userData.balance || 0) + taskBalance;
+        const newXp = markComplete
+            ? (userData.xp || 0) + taskXp
+            : (userData.xp || 0) - taskXp;
     
+        const newBalance = markComplete
+            ? (userData.balance || 0) + taskBalance
+            : (userData.balance || 0) - taskBalance;
+    
+        // === Only update XP/balance/stats if reward state is changing ===
+        if (markComplete && !wasRewarded) {
             await updateDoc(userRef, {
                 xp: Math.max(0, newXp),
                 balance: Math.max(0, newBalance),
             });
     
-            if (!isTaskCompleted && task.repeat && task.repeat !== "none") {
+            // Handle repeat task scheduling
+            if (task.repeat && task.repeat !== "none") {
                 let nextDate = new Date(task.date);
                 if (typeof task.repeat === "object") {
                     if (task.repeat.type === "days") nextDate.setDate(nextDate.getDate() + task.repeat.interval);
@@ -118,30 +132,163 @@ const TaskScreen = () => {
                     nextDate.setMonth(nextDate.getMonth() + 1);
                 }
     
-                // Instead of creating a new task, update the existing task with the new date
                 await updateDoc(taskRef, {
                     date: nextDate.toISOString().split("T")[0],
-                    completed: false, // Reset completion status for the new occurrence
+                    completed: false,
+                    rewarded: false
                 });
             } else {
-                // Just mark the task as completed
-                await updateDoc(taskRef, { completed: !task.completed });
+                await updateDoc(taskRef, {
+                    completed: true,
+                    rewarded: true
+                });
             }
     
-            Toast.show({
-                type: isTaskCompleted ? 'info' : 'success',
-                text1: isTaskCompleted ? "Task Undone" : "Task Completed!",
-                text2: isTaskCompleted
-                    ? `You lost ${taskXp} XP and ${taskBalance} coins.`
-                    : `You gained ${taskXp} XP and ${taskBalance} coins.`,
-                position: 'top',
-                visibilityTime: 5000,
-            });            
-        } catch (error) {
-            console.error("Error updating task:", error);
-        }
-    };
+            // === Handle stats ===
+            if (!statsData) {
+                await setDoc(statsRef, {
+                    tasksCompleted: 1,
+                    totalBalanceEarned: taskBalance,
+                    totalXpEarned: taskXp,
+                    tasksCompletedThisWeek: 1,
+                    daysActive: 1,
+                    lastLoginDate: todayStr,
+                    currentStreak: 1,
+                    longestStreak: 1,
+                    lastTaskCompletedDate: now.toISOString(),
+                }, { merge: true });
+            } else {
+                const updates: any = {
+                    tasksCompleted: increment(1),
+                    totalBalanceEarned: increment(taskBalance),
+                    totalXpEarned: increment(taskXp),
+                    lastTaskCompletedDate: now.toISOString(),
+                };
     
+                const startOfWeek = new Date(now);
+                startOfWeek.setDate(now.getDate() - now.getDay());
+                startOfWeek.setHours(0, 0, 0, 0);
+    
+                const lastCompleted = statsData.lastTaskCompletedDate
+                    ? new Date(statsData.lastTaskCompletedDate)
+                    : null;
+                const completedThisWeek = lastCompleted && lastCompleted >= startOfWeek;
+    
+                updates.tasksCompletedThisWeek = completedThisWeek ? increment(1) : 1;
+    
+                const lastLogin = statsData.lastLoginDate;
+                const lastDate = lastLogin ? new Date(lastLogin) : null;
+                const lastDateStr = lastDate?.toISOString().split("T")[0] ?? null;
+    
+                if (lastDateStr !== todayStr) {
+                    updates.lastLoginDate = todayStr;
+                  
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+                    const isYesterday = lastDateStr === yesterdayStr;
+                  
+                    if (isYesterday) {
+                        const nextStreak = (statsData.currentStreak || 0) + 1;
+                        updates.currentStreak = nextStreak;
+                        if (nextStreak > (statsData.longestStreak || 0)) {
+                            updates.longestStreak = nextStreak;
+                        }
+                    } else {
+                        updates.currentStreak = 1;
+                        if ((statsData.longestStreak || 0) < 1) {
+                            updates.longestStreak = 1;
+                        }
+                    }
+                }                  
+    
+                await updateDoc(statsRef, updates);
+            }
+    
+        } else if (!markComplete && wasRewarded) {
+            // === Undo reward ===
+            await updateDoc(userRef, {
+                xp: Math.max(0, newXp),
+                balance: Math.max(0, newBalance),
+            });
+    
+            const updates: any = {
+                tasksCompleted: increment(-1),
+                totalBalanceEarned: increment(-taskBalance),
+                totalXpEarned: increment(-taskXp),
+                tasksCompletedThisWeek: increment(-1),
+            };
+    
+            await updateDoc(statsRef, updates);
+            await updateDoc(taskRef, { completed: false, rewarded: false });
+        } else {
+            // No XP/stat updates needed
+            await updateDoc(taskRef, { completed: markComplete });
+        }
+    
+        Toast.show({
+            type: markComplete ? 'success' : 'info',
+            text1: markComplete ? "Task Completed!" : "Task Undone",
+            text2: markComplete
+                ? `You gained ${taskXp} XP and ${taskBalance} coins.`
+                : `You lost ${taskXp} XP and ${taskBalance} coins.`,
+            position: 'top',
+            visibilityTime: 5000,
+        });
+    };        
+
+    const handleCompleteTask = async (task: Task) => {
+        const markComplete = !task.completed;
+    
+        // Update subtasks accordingly
+        const updatedSubtasks = task.subtasks.map(sub => ({
+            ...sub,
+            completed: markComplete
+        }));
+    
+        // Update subtasks in Firestore
+        const taskRef = doc(FIREBASE_DB, "tasks", task.id);
+        await updateDoc(taskRef, {
+            subtask: updatedSubtasks
+        });
+    
+        // Proceed with reward/stat logic
+        await updateTaskCompletion({ ...task, subtasks: updatedSubtasks }, markComplete);
+    };       
+
+    const toggleSubtaskCompletion = async (taskId: string, subtaskIndex: number) => {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+    
+        const updatedSubtasks = [...task.subtasks];
+        const subtask = updatedSubtasks[subtaskIndex];
+    
+        updatedSubtasks[subtaskIndex] = {
+            ...subtask,
+            completed: !subtask.completed,
+        };
+    
+        const allSubtasksCompleted = updatedSubtasks.every(sub => sub.completed);
+        const taskRef = doc(FIREBASE_DB, "tasks", taskId);
+    
+        try {
+            // Update just the subtask array first
+            await updateDoc(taskRef, {
+                subtask: updatedSubtasks,
+                completed: allSubtasksCompleted
+            });
+    
+            // Trigger full task logic if needed
+            if (allSubtasksCompleted && !task.completed) {
+                await updateTaskCompletion({ ...task, subtasks: updatedSubtasks }, true);
+            } else if (!allSubtasksCompleted && task.completed) {
+                await updateTaskCompletion({ ...task, subtasks: updatedSubtasks }, false);
+            }
+    
+        } catch (error) {
+            console.error("Error updating subtask:", error);
+        }
+    };    
     
     const sortTasks = (tasks: Task[], option: string): Task[] => {
         return [...tasks].sort((a, b) => {
@@ -153,7 +300,7 @@ const TaskScreen = () => {
         });
     };
     
-    const formatRepeat = (repeat) => {
+    const formatRepeat = (repeat: string | { type: string; interval: number; } | null) => {
         if (!repeat || repeat === "none") return "";
     
         if (typeof repeat === 'object' && repeat !== null) {
@@ -163,18 +310,45 @@ const TaskScreen = () => {
         return repeat.charAt(0).toUpperCase() + repeat.slice(1);
     };
 
-    const renderLeftActions = (_progress: any, _dragX: any, taskId: string) => (
-        <Animated.View style={styles.deleteContainer}>
-            <Text style={styles.deleteText}>Deleting...</Text>
-        </Animated.View>
-    );
-
-    const renderRightActions = (_progress: any, _dragX: any, task: Task) => (
-        <Animated.View style={styles.completeContainer}>
-            <Text style={styles.completeText}>{task.completed ? "Undoing..." : "Completing..."}</Text>
-        </Animated.View>
-    );
-     
+    const renderLeftActions = (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>, taskId: string) => {
+        const translateX = dragX.interpolate({
+            inputRange: [0, 100],
+            outputRange: [-100, 0],
+            extrapolate: 'clamp',
+        });
+      
+        const opacity = dragX.interpolate({
+            inputRange: [80, 100],
+            outputRange: [0, 1],
+            extrapolate: 'clamp',
+        });
+      
+        return (
+            <Animated.View style={[styles.deleteContainer, { transform: [{ translateX }], opacity }]}>
+                <Text style={styles.deleteText}>Deleting...</Text>
+            </Animated.View>
+        );
+    };
+      
+    const renderRightActions = (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>, task: Task) => {
+        const translateX = dragX.interpolate({
+            inputRange: [-100, 0],
+            outputRange: [0, 100],
+            extrapolate: 'clamp',
+        });
+      
+        const opacity = dragX.interpolate({
+            inputRange: [-100, -80],
+            outputRange: [1, 0],
+            extrapolate: 'clamp',
+        });
+      
+        return (
+            <Animated.View style={[styles.completeContainer, { transform: [{ translateX }], opacity }]}>
+                <Text style={styles.completeText}>{task.completed ? "Undoing..." : "Completing..."}</Text>
+            </Animated.View>
+        );
+      };
 
     const handleTaskPress = (taskId: string) => {
         const task = tasks.find(t => t.id === taskId);
@@ -183,8 +357,7 @@ const TaskScreen = () => {
         }
     
         setExpandedTask(expandedTask === taskId ? null : taskId);
-    };
-    
+    };  
     
     if (!settings || !user) return null;
     return (
@@ -215,11 +388,17 @@ const TaskScreen = () => {
                             renderItem={({ item }) => (
                                 <Swipeable
                                 ref={(ref) => ref && (swipeableRefs[item.id] = ref)}
+                                leftThreshold={100}
+                                rightThreshold={100}
+                                friction={2}
                                 onSwipeableOpen={(direction) => {
-                                    if (direction === 'left') handleDeleteTask(item.id);
-                                    if (direction === 'right') handleCompleteTask(item);
-
-                                    setTimeout(() => swipeableRefs[item.id]?.close(), 50);
+                                    if (direction === 'left') {
+                                      requestAnimationFrame(() => handleDeleteTask(item.id));
+                                    } else if (direction === 'right') {
+                                      requestAnimationFrame(() => handleCompleteTask(item));
+                                    }
+                                  
+                                    requestAnimationFrame(() => swipeableRefs[item.id]?.close());
                                 }}
                                     renderLeftActions={(progress, dragX) => renderLeftActions(progress, dragX, item.id)}
                                     renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item)}
@@ -245,14 +424,22 @@ const TaskScreen = () => {
 
                                             {expandedTask === item.id && item.subtasks && item.subtasks.length > 0 && (
                                                 <View>
-                                                    {item.subtasks.map((subtask, index) => (
+                                                {item.subtasks.map((subtask, index) => (
+                                                    <Pressable key={index} onPress={() => toggleSubtaskCompletion(item.id, index)}>
                                                         <Text
-                                                            key={index}
-                                                            style={[styles.taskDetails, { color: settings.darkMode ? colors.white : colors.black }]}
+                                                            style={[
+                                                                styles.taskDetails,
+                                                                { 
+                                                                    color: settings.darkMode ? colors.white : colors.black,
+                                                                    textDecorationLine: subtask.completed ? 'line-through' : 'none',
+                                                                    opacity: subtask.completed ? 0.5 : 1,
+                                                                }
+                                                            ]}
                                                         >
-                                                            • {subtask.text}
+                                                            • {subtask.text} {subtask.completed ? "✅" : ""}
                                                         </Text>
-                                                    ))}
+                                                    </Pressable>
+                                                ))}
                                                 </View>
                                             )}
                                         </View>

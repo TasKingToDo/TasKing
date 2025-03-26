@@ -1,7 +1,7 @@
 import React, { useContext, useState, useRef } from 'react';
 import { View, Text, Button, StyleSheet, Pressable, TextInput, Dimensions, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSharedValue, useDerivedValue } from 'react-native-reanimated';
-import { addDoc, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc, updateDoc, increment, addDoc, collection } from "firebase/firestore";
 import { Picker } from '@react-native-picker/picker';
 import Slider from '@react-native-community/slider';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
@@ -87,9 +87,10 @@ const CreateTaskScreen = ({navigation}) => {
             let repeatData = repeat === "custom"
                 ? { type: customRepeatType, interval: parseInt(customRepeatValue) }
                 : repeat;
-
+    
             const selectedDifficulty = difficultyLevels[difficultyIndex];
-
+    
+            // Save the task to Firestore
             await addDoc(collection(FIREBASE_DB, "tasks"), {
                 userId: user.uid,
                 name: name,
@@ -102,8 +103,16 @@ const CreateTaskScreen = ({navigation}) => {
                 balance: selectedDifficulty.balance,
                 difficulty: selectedDifficulty.label,
             });
-
-            alert("Task has been created!");
+    
+            // Increment tasksCreated in stats
+            const statsRef = doc(FIREBASE_DB, "stats", user.uid);
+            const statsSnap = await getDoc(statsRef);
+            if (statsSnap.exists()) {
+                await updateDoc(statsRef, {
+                    tasksCreated: increment(1),
+                });
+            }
+    
             navigation.navigate('Home');
         } catch (error) {
             console.error("Error adding document: ", error);
@@ -113,10 +122,10 @@ const CreateTaskScreen = ({navigation}) => {
 
     // Subtask
     const handleAddSubtaskManually = () => {
-        setSubtasks([...subtasks, { text: `Subtask ${subtasks.length + 1}`, editable: false }]);
+        setSubtasks([...subtasks, { text: `Subtask ${subtasks.length + 1}`, editable: false, completed: false }]);
     };
     
-    // Placeholder function for AI-generated subtasks
+    // AI-generated subtasks (Written by Will and refactored by Bryce)
     const handleGenerateSubtasksAI = async () => {
         if (!name.trim()) {
             alert("Please enter a task name first.");
@@ -124,18 +133,37 @@ const CreateTaskScreen = ({navigation}) => {
         }
     
         try {
-            // Let's pretend this is your AI-generated list:
-            const aiGenerated = [
-                "Rinse dishes", 
-                "Apply soap", 
-                "Scrub thoroughly", 
-                "Rinse again", 
-                "Dry and put away"
-            ];
+            const API_KEY = "AIzaSyCUc53d2u7oETlQceWvqwPNgPSAXcYtp9c";
+            const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
+            const prompt = `Please generate a sensible number of subtasks, less than or equal to 10, with no formatting (like markdown and others); for the main task: ${name}`;
     
-            const formattedSubtasks = aiGenerated.map((item) => ({
+            const response = await fetch(`${BASE_URL}/models/gemini-1.5-pro-latest:generateContent?key=${API_KEY}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+    
+            const data = await response.json();
+    
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            if (!text) {
+                alert("AI did not return any subtasks.");
+                return;
+            }
+    
+            const parsedSubtasks = text
+                .split('\n')
+                .map((line: string) => line.replace(/^\d+\.\s*/, '').trim())
+                .filter((line: string | any[]) => line.length > 0);
+    
+            const formattedSubtasks = parsedSubtasks.map((item: any) => ({
                 text: item,
                 editable: false,
+                completed: false,
             }));
     
             setSubtasks((prev) => [...prev, ...formattedSubtasks]);
@@ -144,6 +172,7 @@ const CreateTaskScreen = ({navigation}) => {
             alert("Could not generate subtasks.");
         }
     };
+    
     
     // Toggle edit mode for a subtask
     const toggleEditMode = (index: number) => {
@@ -191,26 +220,29 @@ const CreateTaskScreen = ({navigation}) => {
                                 {/* TextInputs */}
                                 <View style={styles.formContainer}>
                                     <TextInput
-                                        style={[styles.textInput, {width: 410, borderColor: settings.darkMode ? colors.white : colors.black, alignSelf: 'stretch'}]}
+                                        style={[styles.textInput, {width: 410, borderColor: settings.darkMode ? colors.white : colors.black, color: settings.darkMode ? colors.white : colors.black, alignSelf: 'stretch'}]}
                                         value={name}
                                         onChangeText={(text) => {setName(text)}}
                                         placeholder="Name"
+                                        placeholderTextColor={settings.darkMode ? colors.white : colors.black}
                                         autoCapitalize="none"
                                     />
                                     <View style={styles.row}>
                                         <TextInput 
-                                            style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black, alignSelf: 'stretch'}]}
+                                            style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black, color: settings.darkMode ? colors.white : colors.black, alignSelf: 'stretch'}]}
                                             value={date}
                                             onChangeText={handleDateChange}
                                             placeholder="YYYY-MM-DD"
+                                            placeholderTextColor={settings.darkMode ? colors.white : colors.black}
                                             keyboardType="numeric"
                                             maxLength={10}
                                         />
                                         <TextInput
-                                            style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black, alignSelf: 'stretch'}]}
+                                            style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black, color: settings.darkMode ? colors.white : colors.black, alignSelf: 'stretch'}]}
                                             value={time}
                                             onChangeText={handleTimeChange}
                                             placeholder="HH:MM AM/PM"
+                                            placeholderTextColor={settings.darkMode ? colors.white : colors.black}
                                             keyboardType="default"
                                             maxLength={8}
                                         />
@@ -313,15 +345,15 @@ const CreateTaskScreen = ({navigation}) => {
                                         </Text>
                                     </View>
 
-                                    <View style={{width: "100%", height: 1, backgroundColor: colors.black, marginVertical: 5}}></View>
+                                    <View style={{width: "100%", height: 1, backgroundColor: settings.darkMode ? colors.white : colors.black, marginVertical: 5}}></View>
 
                                     {/* Buttons for AI and Manual Subtasks */}
                                     <View style={styles.subtaskButtonContainer}>
                                         <Pressable onPress={handleGenerateSubtasksAI}>
-                                            <MaterialCommunityIcons name="robot" size={40} color={colors.black} />
+                                            <MaterialCommunityIcons name="robot" size={40} color={settings.darkMode ? colors.white : colors.black} />
                                         </Pressable>
                                         <Pressable onPress={handleAddSubtaskManually}>
-                                            <Ionicons name="create-outline" size={40} color={colors.black} />
+                                            <Ionicons name="create-outline" size={40} color={settings.darkMode ? colors.white : colors.black} />
                                         </Pressable>
                                     </View>
 
@@ -330,7 +362,7 @@ const CreateTaskScreen = ({navigation}) => {
                                         <View key={index} style={styles.subtaskItem}>
                                             {subtask.editable ? (
                                                 <TextInput
-                                                    style={styles.editSubtaskInput}
+                                                    style={[styles.editSubtaskInput, {color: settings.darkMode ? colors.white : colors.black}]}
                                                     value={subtask.text}
                                                     onChangeText={(text) => updateSubtaskText(index, text)}
                                                     onBlur={() => toggleEditMode(index)}
@@ -338,7 +370,7 @@ const CreateTaskScreen = ({navigation}) => {
                                                 />
                                             ) : (
                                                 <Pressable onPress={() => toggleEditMode(index)} style={{ flex: 1 }}>
-                                                    <Text style={styles.subtaskText}>{subtask.text}</Text>
+                                                    <Text style={[styles.subtaskText, {color: settings.darkMode ? colors.white : colors.black}]}>{subtask.text}</Text>
                                                 </Pressable>
                                             )}
                                             
