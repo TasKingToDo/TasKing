@@ -1,15 +1,15 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Text, View, StyleSheet, FlatList, Animated, Pressable} from 'react-native';
+import { Text, View, StyleSheet, FlatList, Animated, Pressable, TouchableOpacity, Modal } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, deleteDoc, doc, getDocs, updateDoc, query, where, getDoc, onSnapshot, increment, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, updateDoc, query, where, getDoc, onSnapshot, increment, setDoc } from "firebase/firestore";
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
+import Icon from 'react-native-vector-icons/FontAwesome';
 import colors from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '../config/authContext';
-
 
 type Subtask = {
     text: string;
@@ -21,21 +21,25 @@ type Task = {
     name: string;
     date: string;
     time: string;
-    repeat: string | {type: string, interval: number};
+    repeat: string | { type: string; interval: number };
     completed?: boolean;
     createdAt: string;
-    subtasks: Subtask[]
+    subtasks: Subtask[];
+    notificationPreset?: number | null;
 };
-
 
 const TaskScreen = () => {
     const settings = useContext(SettingsContext);
     const { user } = useContext(authContext);
-    const [tasks,setTasks] = useState<Task[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedTask, setExpandedTask] = useState<string | null>(null);
     const [sortOption, setSortOption] = useState<string>('createdAt');
     const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
+
+    const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+    const [inAppNotifications, setInAppNotifications] = useState<Array<{ id: string, title: string, message: string }>>([]);
 
     useEffect(() => {
         if (!user) return;
@@ -55,7 +59,8 @@ const TaskScreen = () => {
                     subtasks: (data.subtask ?? []).map((sub: any) => ({
                         text: sub.text,
                         completed: sub.completed ?? false,
-                    }))                    
+                    })),
+                    notificationPreset: data.notificationPreset || null,
                 };
             });
     
@@ -63,8 +68,52 @@ const TaskScreen = () => {
             setLoading(false);
         });
     
-        return () => unsubscribe(); // Clean up listener on unmount
+        return () => unsubscribe();
     }, [user, sortOption]);
+
+    const scheduleNotification = async (task: Task, presetHours: number) => {
+        const taskDueDate = new Date(`${task.date}T${task.time}`);
+        const triggerTime = new Date(taskDueDate.getTime() - presetHours * 60 * 60 * 1000);
+        
+        const now = Date.now();
+    
+        if (triggerTime.getTime() <= now) {
+            console.warn("Notification time is in the past. Cannot schedule.");
+            return;
+        }
+    
+        const delay = triggerTime.getTime() - now;
+    
+        setTimeout(() => {
+            Toast.show({
+                type: 'info',
+                text1: "Upcoming Task Reminder",
+                text2: `${task.name} is due in ${presetHours} hour(s)!`,
+                position: 'top',
+                visibilityTime: 5000, // The banner will be visible for 5 seconds.
+            });
+        }, delay);
+    
+        // This doesn't really do much until I actually make notifications work work
+        await updateDoc(doc(FIREBASE_DB, "tasks", task.id), {
+            notificationPreset: presetHours,
+        });
+    };
+    
+    
+
+    const handleNotificationPress = (taskId: string) => {
+        setSelectedTaskId(taskId);
+        setNotificationModalVisible(true);
+    };
+
+    const handlePresetSelection = async (presetHours: number) => {
+        setNotificationModalVisible(false);
+        const task = tasks.find(t => t.id === selectedTaskId);
+        if (task) {
+            await scheduleNotification(task, presetHours);
+        }
+    };
 
     const handleDeleteTask = async (taskId: string) => {
         try {
@@ -350,20 +399,27 @@ const TaskScreen = () => {
         );
       };
 
-    const handleTaskPress = (taskId: string) => {
+      const handleTaskPress = (taskId: string) => {
         const task = tasks.find(t => t.id === taskId);
         if (!task || task.subtasks.length === 0) {
             return;
         }
-    
         setExpandedTask(expandedTask === taskId ? null : taskId);
-    };  
-    
+    };
+
     if (!settings || !user) return null;
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaProvider>
-                <SafeAreaView>
+                <SafeAreaView style={styles.container}>
+                    {/* Notification Banner */}
+                    {inAppNotifications.map(notification => (
+                        <View key={notification.id} style={styles.notificationBanner}>
+                            <Text style={styles.notificationTitle}>{notification.title}</Text>
+                            <Text style={styles.notificationMessage}>{notification.message}</Text>
+                        </View>
+                    ))}
+
                     {tasks.length > 0 && (
                         <View style={styles.sortContainer}>
                             <Text style={styles.sortLabel}>Sort By:</Text>
@@ -387,19 +443,18 @@ const TaskScreen = () => {
                             keyExtractor={(item) => item.id}
                             renderItem={({ item }) => (
                                 <Swipeable
-                                ref={(ref) => ref && (swipeableRefs[item.id] = ref)}
-                                leftThreshold={100}
-                                rightThreshold={100}
-                                friction={2}
-                                onSwipeableOpen={(direction) => {
-                                    if (direction === 'left') {
-                                      requestAnimationFrame(() => handleDeleteTask(item.id));
-                                    } else if (direction === 'right') {
-                                      requestAnimationFrame(() => handleCompleteTask(item));
-                                    }
-                                  
-                                    requestAnimationFrame(() => swipeableRefs[item.id]?.close());
-                                }}
+                                    ref={(ref) => ref && (swipeableRefs[item.id] = ref)}
+                                    leftThreshold={100}
+                                    rightThreshold={100}
+                                    friction={2}
+                                    onSwipeableOpen={(direction) => {
+                                        if (direction === 'left') {
+                                            requestAnimationFrame(() => {/* handle delete task */});
+                                        } else if (direction === 'right') {
+                                            requestAnimationFrame(() => {/* handle complete task */});
+                                        }
+                                        requestAnimationFrame(() => swipeableRefs[item.id]?.close());
+                                    }}
                                     renderLeftActions={(progress, dragX) => renderLeftActions(progress, dragX, item.id)}
                                     renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item)}
                                 >
@@ -407,39 +462,40 @@ const TaskScreen = () => {
                                         <View style={[
                                             styles.taskContainer,
                                             item.completed && styles.completedTask,
-                                            {backgroundColor: settings.darkMode ? colors.black : colors.white}
+                                            { backgroundColor: settings.darkMode ? colors.black : colors.white }
                                         ]}>
-                                            <Text style={[styles.taskTitle, { color: settings.darkMode ? colors.white : colors.black }]}>
-                                                {item.name} {item.completed ? "✅" : ""}
-                                            </Text>
+                                            <View style={styles.headerRow}>
+                                                <Text style={[styles.taskTitle, { color: settings.darkMode ? colors.white : colors.black }]}>
+                                                    {item.name} {item.completed ? "✅" : ""}
+                                                </Text>
+                                                <TouchableOpacity onPress={() => handleNotificationPress(item.id)}>
+                                                    <Icon name="bell" size={20} color={item.notificationPreset ? 'orange' : 'gray'} />
+                                                </TouchableOpacity>
+                                            </View>
                                             <Text style={[styles.taskDetails, { color: settings.darkMode ? colors.white : colors.black }]}>
                                                 📅 {item.date} ⏰ {item.time}
                                             </Text>
-
                                             {item.repeat !== "none" && (
                                                 <Text style={[styles.taskDetails, { color: settings.darkMode ? colors.white : colors.black }]}>
                                                     🔁 Repeat: {formatRepeat(item.repeat)}
                                                 </Text>
                                             )}
-
                                             {expandedTask === item.id && item.subtasks && item.subtasks.length > 0 && (
                                                 <View>
-                                                {item.subtasks.map((subtask, index) => (
-                                                    <Pressable key={index} onPress={() => toggleSubtaskCompletion(item.id, index)}>
-                                                        <Text
-                                                            style={[
+                                                    {item.subtasks.map((subtask, index) => (
+                                                        <Pressable key={index} onPress={() => {/* toggle subtask completion */}}>
+                                                            <Text style={[
                                                                 styles.taskDetails,
                                                                 { 
                                                                     color: settings.darkMode ? colors.white : colors.black,
                                                                     textDecorationLine: subtask.completed ? 'line-through' : 'none',
                                                                     opacity: subtask.completed ? 0.5 : 1,
                                                                 }
-                                                            ]}
-                                                        >
-                                                            • {subtask.text} {subtask.completed ? "✅" : ""}
-                                                        </Text>
-                                                    </Pressable>
-                                                ))}
+                                                            ]}>
+                                                                • {subtask.text} {subtask.completed ? "✅" : ""}
+                                                            </Text>
+                                                        </Pressable>
+                                                    ))}
                                                 </View>
                                             )}
                                         </View>
@@ -448,6 +504,32 @@ const TaskScreen = () => {
                             )}
                         />
                     )}
+
+                    {/* Notification Preset Modal */}
+                    <Modal
+                        transparent={true}
+                        animationType="slide"
+                        visible={notificationModalVisible}
+                        onRequestClose={() => setNotificationModalVisible(false)}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Select Notification Preset</Text>
+                                <TouchableOpacity onPress={() => handlePresetSelection(1)} style={styles.presetButton}>
+                                    <Text style={styles.presetButtonText}>1 Hour Before</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => handlePresetSelection(2)} style={styles.presetButton}>
+                                    <Text style={styles.presetButtonText}>2 Hours Before</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => handlePresetSelection(24)} style={styles.presetButton}>
+                                    <Text style={styles.presetButtonText}>24 Hours Before</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setNotificationModalVisible(false)} style={styles.cancelButton}>
+                                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
                 </SafeAreaView>
             </SafeAreaProvider>
         </GestureHandlerRootView>
@@ -455,19 +537,13 @@ const TaskScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    completeContainer: {
-        backgroundColor: 'green',
-        justifyContent: 'center',
+    container: {
+        flex: 1,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        width: 100,
-    },
-    completeText: { 
-        color: 'white', 
-        fontSize: 18, 
-        fontWeight: 'bold' 
-    },
-    completedTask: {
-        backgroundColor: '#d4edda',
     },
     deleteContainer: {
         backgroundColor: 'red',
@@ -476,6 +552,17 @@ const styles = StyleSheet.create({
         width: 100,
     },
     deleteText: { 
+        color: 'white', 
+        fontSize: 18, 
+        fontWeight: 'bold' 
+    },
+    completeContainer: {
+        backgroundColor: 'green',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 100,
+    },
+    completeText: { 
         color: 'white', 
         fontSize: 18, 
         fontWeight: 'bold' 
@@ -519,6 +606,57 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: "bold",
     },
-})
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: 20,
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 8,
+        padding: 20,
+        alignItems: 'center'
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15
+    },
+    presetButton: {
+        backgroundColor: '#2196F3',
+        padding: 10,
+        borderRadius: 8,
+        marginVertical: 5,
+        width: '80%',
+        alignItems: 'center'
+    },
+    presetButtonText: {
+        color: 'white',
+        fontSize: 16
+    },
+    cancelButton: {
+        marginTop: 10
+    },
+    cancelButtonText: {
+        color: 'red',
+        fontSize: 16
+    },
+    notificationBanner: {
+        backgroundColor: '#f0ad4e',
+        padding: 10,
+        margin: 10,
+        borderRadius: 8,
+    },
+    notificationTitle: {
+        fontWeight: 'bold',
+        fontSize: 16,
+        color: '#fff',
+    },
+    notificationMessage: {
+        fontSize: 14,
+        color: '#fff',
+    },
+});
 
 export default TaskScreen;
