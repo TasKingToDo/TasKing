@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, FlatList, Animated, Pressable, TouchableOpacity
 import { Picker } from '@react-native-picker/picker';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, deleteDoc, doc, updateDoc, query, where, getDoc, onSnapshot, increment, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, updateDoc, query, where, getDoc, onSnapshot, increment, setDoc } from "firebase/firestore";
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import colors from '../config/colors';
@@ -412,7 +412,7 @@ const TaskScreen = () => {
         <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaProvider>
                 <SafeAreaView style={styles.container}>
-                    {/* Notification Banner */}
+                    {/* In-App Notification Banner */}
                     {inAppNotifications.map(notification => (
                         <View key={notification.id} style={styles.notificationBanner}>
                             <Text style={styles.notificationTitle}>{notification.title}</Text>
@@ -449,9 +449,9 @@ const TaskScreen = () => {
                                     friction={2}
                                     onSwipeableOpen={(direction) => {
                                         if (direction === 'left') {
-                                            requestAnimationFrame(() => {/* handle delete task */});
+                                            requestAnimationFrame(() => handleDeleteTask(item.id));
                                         } else if (direction === 'right') {
-                                            requestAnimationFrame(() => {/* handle complete task */});
+                                            requestAnimationFrame(() => handleCompleteTask(item));
                                         }
                                         requestAnimationFrame(() => swipeableRefs[item.id]?.close());
                                     }}
@@ -483,7 +483,7 @@ const TaskScreen = () => {
                                             {expandedTask === item.id && item.subtasks && item.subtasks.length > 0 && (
                                                 <View>
                                                     {item.subtasks.map((subtask, index) => (
-                                                        <Pressable key={index} onPress={() => {/* toggle subtask completion */}}>
+                                                        <Pressable key={index} onPress={() => toggleSubtaskCompletion(item.id, index)}>
                                                             <Text style={[
                                                                 styles.taskDetails,
                                                                 { 
