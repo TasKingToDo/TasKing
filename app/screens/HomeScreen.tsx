@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, StyleSheet, Pressable, Text, Dimensions } from 'react-native';
+import { View, StyleSheet, Pressable, Text, Dimensions, Alert } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS, useAnimatedReaction } from "react-native-reanimated";
@@ -141,9 +141,9 @@ const HomeScreen = ({navigation}) => {
         display: translateY.value > height * 0.15 ? 'none' : 'flex',
         backgroundColor: colors.primarySoft,
         zIndex: translateY.value < -height * 0.15 ? 2 : 1,
-    })); 
+    }));
     
-    return (
+  return (
         <SafeAreaProvider style={styles.background}>
             <SafeAreaView style={styles.fullScreen}>
                 <GestureHandlerRootView style={styles.fullScreen}>
@@ -152,7 +152,6 @@ const HomeScreen = ({navigation}) => {
                         <View style={styles.imageContainer}>
                             <ShopScreen />
                         </View>
-
                         <GestureDetector gesture={gesture}>
                             <Animated.View style={[styles.middleBar, animatedStyle]}>
                                 <View style={styles.dotsContainer}>
