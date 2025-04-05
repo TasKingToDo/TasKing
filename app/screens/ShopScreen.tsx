@@ -131,6 +131,9 @@ const ShopScreen = () => {
   // Fetch Balance from Database
   const [balance, setBalance] = useState(0);
 
+  //Set background based on time of day
+  const [bg, setBg] = useState("");
+
   //Fetch data from db
   useEffect(() => {
     //err catch
@@ -146,6 +149,15 @@ const ShopScreen = () => {
         setOwnedHat(docSnap.data().ownedhat || {});
         setOwnedShoes(docSnap.data().ownedshoes || {});
         setOwnedAcc(docSnap.data().ownedacc || {});
+
+        //set background based on time of day
+        var hour = new Date().getHours();
+        //day
+        if (hour >= 8 && hour <= 18) { setBg(bgData[0].imageUrl); }
+        //night
+        else if (hour < 5 || hour > 22) { setBg(bgData[2].imageUrl); }
+        //golden hour
+        else { setBg(bgData[1].imageUrl); }
       } else {
         console.log("No such user document!");
       }
@@ -173,11 +185,30 @@ const ShopScreen = () => {
     //err catch
     if (!userDocRef) return;
 
-    //temporary price variable
-    let price = 35;
+    //instantiating price variable
+    let price = 20;
+    switch (category) {
+      case "shirt":
+        price = 20;
+        break;
+      case "pants":
+        price = 20;
+        break;
+      case "hat":
+        price = 35;
+        break;
+      case "shoes":
+        price = 25;
+        break;
+      case "acc":
+        price = 35;
+        break;
+      default:
+        console.log("err setting price");
+    }
 
     //display popup that confirms user decision
-    Alert.alert("", "Unlock item?", [
+    Alert.alert("", "Unlock item? Price = " + price, [
       {
         text: "Unlock",
         onPress: () => {
@@ -205,7 +236,7 @@ const ShopScreen = () => {
   }, [userDocRef]);
 
   const updateOwned = useCallback((category, url, price) => {
-    //add unlocked item to owned items in db
+    //add unlocked item to owned items in db and set price
     switch (category) {
       case "shirt":
         setOwnedShirt((prev) => {
@@ -253,17 +284,14 @@ const ShopScreen = () => {
       return newBalance;
     });
     return [];
-
   }, [userDocRef]);
 
   return (
     <SafeAreaProvider style={styles.background}>
       <SafeAreaView style={styles.background}>
-        {/* Displays amount of coins */}
-        
         {/* Top half of screen (display of the character) */}
         <View style={styles.imageContainer}>
-          <Image source={{ uri: bgData[0].imageUrl }} style={styles.bgImage} />
+          <Image source={{ uri: bg }} style={styles.bgImage} />
           <Image source={{ uri: equipped.body }} style={styles.image} />
           <Image source={{ uri: equipped.shoes }} style={styles.image} />
           <Image source={{ uri: equipped.shirt }} style={styles.image} />
@@ -272,7 +300,7 @@ const ShopScreen = () => {
           <Image source={{ uri: equipped.acc }} style={styles.image} />
         </View>
         <View style={styles.coinCountContainer}>
-          <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/coin.png?alt=media&token=e0a45910-fae9-4c15-a462-19154f025f64"}} style={styles.coinImage} />
+          <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/coin.png?alt=media&token=e0a45910-fae9-4c15-a462-19154f025f64" }} style={styles.coinImage} />
           <Text style={styles.coinText}>{balance}</Text>
         </View>
         {/* Bottom half of screen (display of shop tab menu) */}

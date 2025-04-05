@@ -131,7 +131,7 @@ const OpeningScreen = ({navigation}) => {
                                         <TextInput
                                             style={[styles.textInput, { borderColor: colors.black}]}
                                             value={email}
-                                            placeholder="Enter Email"
+                                            placeholder="Set Email"
                                             autoCapitalize="none"
                                             onChangeText={(text) => setEmail(text)}
                                         />
@@ -139,9 +139,16 @@ const OpeningScreen = ({navigation}) => {
                                             style={[styles.textInput, { borderColor: colors.black}]}
                                             value={password}
                                             secureTextEntry={true}
-                                            placeholder="Enter Password"
+                                            placeholder="Set Password"
                                             autoCapitalize="none"
                                             onChangeText={(text) => setPassword(text)}
+                                        />
+                                        <TextInput
+                                          style={[styles.textInput, { borderColor: colors.black }]}
+                                          value={username}
+                                          placeholder="Set Username"
+                                          autoCapitalize="none"
+                                          onChangeText={(text) => setUsername(text)}
                                         />
                                         <View style={{height: 20}}></View>
                                         <Button color={colors.accept} title="Confirm Sign Up" onPress={signUp} />
