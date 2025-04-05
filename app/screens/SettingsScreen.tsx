@@ -30,7 +30,7 @@ const SettingsScreen = ({ navigation }) => {
       if (user) {
         const userRef = doc(db, 'users', user.uid);
         await updateDoc(userRef, { username: newUsername });
-        alert("Nice to meet you, " + user + "!");
+        alert("Nice to meet you, " + newUsername + "!");
         console.log('Username updated successfully');
         setNewUsername('');
       }
