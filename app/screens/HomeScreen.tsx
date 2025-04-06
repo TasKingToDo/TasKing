@@ -7,7 +7,8 @@ import { Feather } from "@expo/vector-icons";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import * as Progress from 'react-native-progress';
 
-import colors from '../config/colors';
+import { themes } from '../config/colors';
+import useTheme from '../config/useTheme';
 import { SettingsContext } from '../config/SettingsContext';
 import TaskScreen from './TaskScreen';
 import ShopScreen from './ShopScreen';
@@ -24,6 +25,7 @@ const BOTTOM_EXPANDED = height / 1.8 - NAV_BAR_HEIGHT;
 const HomeScreen = ({navigation}) => {
     const translateY = useSharedValue(MID_POSITION);
     const settings = useContext(SettingsContext);
+    const colors = useTheme();
     const { user } = useContext(authContext);
     const [xp, setXp] = useState(0);
     const [level, setLevel] = useState(0);
@@ -153,11 +155,11 @@ const HomeScreen = ({navigation}) => {
                             <ShopScreen />
                         </View>
                         <GestureDetector gesture={gesture}>
-                            <Animated.View style={[styles.middleBar, animatedStyle]}>
+                            <Animated.View style={[styles.middleBar, animatedStyle, { backgroundColor: themes.light.black, borderColor: colors.secondary }]}>
                                 <View style={styles.dotsContainer}>
-                                    <View style={styles.dot} />
-                                    <View style={styles.dot} />
-                                    <View style={styles.dot} />
+                                    <View style={[styles.dot, { backgroundColor: themes.light.white }]} />
+                                    <View style={[styles.dot, { backgroundColor: themes.light.white }]} />
+                                    <View style={[styles.dot, { backgroundColor: themes.light.white }]} />
                                 </View>
                             </Animated.View>
                         </GestureDetector>
@@ -172,7 +174,7 @@ const HomeScreen = ({navigation}) => {
                     </View>
 
                     {/* Navbar */}
-                    <Animated.View style={[styles.navbar, navbarAnimatedStyle, { backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]}>
+                    <Animated.View style={[styles.navbar, navbarAnimatedStyle, { backgroundColor: colors.primary}]}>
                         <CustomMenu navbarVisible={navbarVisible} />
                         <View style={styles.levelContainer}>
                             <View style={styles.progressBarContainer}>
@@ -181,20 +183,20 @@ const HomeScreen = ({navigation}) => {
                                     width={150}
                                     height={30}
                                     color={colors.accept}
-                                    borderColor={settings.darkMode ? colors.white : colors.black}
+                                    borderColor={colors.black}
                                 />
 
-                                <Text style={[styles.progressText, {color: settings.darkMode ? colors.white : colors.black}]}>
+                                <Text style={[styles.progressText, {color: colors.black}]}>
                                     {Math.round(xpProgress * 100)}%
                                 </Text>
                             </View>
                             <View style={{width: "7%"}} />
-                            <Text style={[styles.levelText, { color: settings.darkMode ? colors.white : colors.black }]}>
+                            <Text style={[styles.levelText, { color: colors.black }]}>
                                 Lvl. {level}
                             </Text>
                         </View>
                         <Pressable style={styles.createTask} onPress={() => navigation.navigate('Create Task')}>
-                            <Feather name="plus-circle" size={70} color={settings.darkMode ? colors.white : colors.black} />
+                            <Feather name="plus-circle" size={70} color={colors.black} />
                         </Pressable>
                     </Animated.View>
                 </GestureHandlerRootView>
@@ -225,7 +227,6 @@ const styles = StyleSheet.create({
     dot: {
         width: 8,
         height: 8,
-        backgroundColor: colors.white,
         borderRadius: 4,
         marginHorizontal: 4,
     },
@@ -268,8 +269,8 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: 10,
-        backgroundColor: colors.black,
         borderRadius: 50,
+        borderWidth: 1,
         zIndex: 10,
     },
     navbar: {

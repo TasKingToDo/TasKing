@@ -4,10 +4,11 @@ import { getAuth, signOut, updatePassword } from 'firebase/auth';
 import { getFirestore, doc, updateDoc } from 'firebase/firestore';
 
 import { SettingsContext } from '../config/SettingsContext';
-import colors from '../config/colors';
+import useTheme from '../config/useTheme';
 
 const SettingsScreen = ({ navigation }) => {
   const settings = useContext(SettingsContext);
+  const colors = useTheme();
   const auth = getAuth();
   const db = getFirestore();
 
@@ -62,20 +63,20 @@ const SettingsScreen = ({ navigation }) => {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-          <View style={[styles.background, { backgroundColor: settings.darkMode ? colors.black : colors.white }]}>
+          <View style={[styles.background, { backgroundColor: colors.white }]}>
             <View style={styles.headerContainer}>
               <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30 }}>
-                <Button title="Back" color={settings.darkMode ? colors.secondary : colors.primary} onPress={() => navigation.goBack()} />
+                <Button title="Back" color={colors.secondary} onPress={() => navigation.goBack()} />
               </View>
               <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={[styles.headerText, { color: settings.darkMode ? colors.white : colors.black }]}>
+                <Text style={[styles.headerText, { color: colors.black }]}>
                   Your Settings
                 </Text>
               </View>
             </View>
 
             <View style={styles.toggleContainer}>
-              <Text style={[styles.label, { color: settings.darkMode ? colors.white : colors.black }]}>
+              <Text style={[styles.label, { color: colors.black }]}>
                 Dark Mode
               </Text>
               <Switch
@@ -89,46 +90,46 @@ const SettingsScreen = ({ navigation }) => {
             </TouchableOpacity>
 
             <View style={styles.changeContainer}>
-              <Text style={[styles.changeText, { color: settings.darkMode ? colors.white : colors.black }]}>
+              <Text style={[styles.changeText, { color: colors.black }]}>
                 Change Username
               </Text>
               <TextInput
                 style={[
                   styles.input,
                   {
-                    color: settings.darkMode ? colors.white : colors.black,
-                    borderColor: settings.darkMode ? colors.white : colors.black,
+                    color: colors.black,
+                    borderColor: colors.black,
                   },
                 ]}
                 placeholder="New Username"
-                placeholderTextColor={settings.darkMode ? colors.white : colors.black}
+                placeholderTextColor={colors.black}
                 value={newUsername}
                 onChangeText={(text) => {setNewUsername(text)}}
               />
-              <TouchableOpacity style={[styles.button, {backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]} onPress={handleUsernameUpdate}>
+              <TouchableOpacity style={[styles.button, {backgroundColor: colors.primary}]} onPress={handleUsernameUpdate}>
                 <Text style={styles.buttonText}>Update Username</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.changeContainer}>
-              <Text style={[styles.changeText, { color: settings.darkMode ? colors.white : colors.black }]}>
+              <Text style={[styles.changeText, { color: colors.black }]}>
                 Change Password
               </Text>
               <TextInput
                 style={[
                   styles.input,
                   {
-                    color: settings.darkMode ? colors.white : colors.black,
-                    borderColor: settings.darkMode ? colors.white : colors.black,
+                    color: colors.black,
+                    borderColor: colors.black,
                   },
                 ]}
                 placeholder="New Password"
-                placeholderTextColor={settings.darkMode ? colors.white : colors.black}
+                placeholderTextColor={colors.black}
                 secureTextEntry
                 value={newPassword}
                 onChangeText={(text) => {setNewPassword(text)}}
               />
-              <TouchableOpacity style={[styles.button, {backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]} onPress={handlePasswordUpdate}>
+              <TouchableOpacity style={[styles.button, {backgroundColor: colors.primary}]} onPress={handlePasswordUpdate}>
                 <Text style={styles.buttonText}>Update Password</Text>
               </TouchableOpacity>
             </View>

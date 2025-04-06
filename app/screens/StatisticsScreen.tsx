@@ -2,13 +2,15 @@ import React, { useEffect, useState, useContext } from 'react';
 import { Button, Text, View, StyleSheet, Platform, ActivityIndicator, ScrollView } from 'react-native';
 import { doc, setDoc, onSnapshot} from "firebase/firestore";
 
-import colors from '../config/colors';
+import { themes } from '../config/colors';
+import useTheme from '../config/useTheme';
 import { SettingsContext } from '../config/SettingsContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '../config/authContext';
 
 const StatisticsScreen = ({ navigation }) => {
     const settings = useContext(SettingsContext);
+    const colors = useTheme();
     const { user } = useContext(authContext);
     const [stats, setStats] = useState<any>(null); 
     const [loading, setLoading] = useState(true);
@@ -62,7 +64,7 @@ const StatisticsScreen = ({ navigation }) => {
         return <ActivityIndicator style={{ flex: 1 }} />;
     }
 
-    const textColor = settings.darkMode ? colors.white : colors.black;
+    const textColor = colors.black;
 
     // Days since joined
     const localToday = new Date();
@@ -109,14 +111,14 @@ const StatisticsScreen = ({ navigation }) => {
       ];
 
     return (
-        <View style={[styles.background, { backgroundColor: settings.darkMode ? colors.black : colors.white }]}>
+        <View style={[styles.background, { backgroundColor: colors.white }]}>
             {/* Header */}
             <View style={styles.headerContainer}>
                 <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30 }}>
-                    <Button title="Back" color={settings.darkMode ? colors.secondary : colors.primary} onPress={() => navigation.goBack()} />
+                    <Button title="Back" color={colors.secondary} onPress={() => navigation.goBack()} />
                 </View>
                 <View style={{ flex: 1, alignItems: 'center' }}>
-                    <Text style={[styles.headerText, { color: settings.darkMode ? colors.white : colors.black }]}>
+                    <Text style={[styles.headerText, { color: colors.black }]}>
                         Your Stats
                     </Text>
                 </View>

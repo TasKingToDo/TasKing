@@ -5,7 +5,7 @@ import { Entypo, FontAwesome } from '@expo/vector-icons';
 import { collection, doc, getDoc, updateDoc, query, where, getDocs, addDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import Toast from 'react-native-toast-message';
 
-import colors from '../config/colors';
+import useTheme from '../config/useTheme';
 import { SettingsContext } from '../config/SettingsContext';
 import CustomMenu from '../config/customMenu';
 import { FIREBASE_DB } from '@/firebaseConfig';
@@ -16,6 +16,7 @@ const MID_POSITION = 0;
 
 const FriendsScreen = ({ navigation }) => {
     const { user } = useContext(authContext);
+    const colors = useTheme();
     const [friends, setFriends] = useState([]);
     const [friendUsername, setFriendUsername] = useState('');
     const [friendRequests, setFriendRequests] = useState([]);
@@ -256,7 +257,7 @@ const FriendsScreen = ({ navigation }) => {
     const renderFriendItem = ({ item }) => {
         return (
             <Pressable 
-                style={styles.friendItem} 
+                style={[styles.friendItem, { backgroundColor: colors.primary }]} 
                 onPress={async () => {
                     // Open modal and show basic data
                     setSelectedFriend({
@@ -365,22 +366,22 @@ const FriendsScreen = ({ navigation }) => {
 
     return (
         <View style={{flex: 1}}>
-            <View style={[styles.background, { backgroundColor: settings.darkMode ? colors.black : colors.white }]}>
+            <View style={[styles.background, { backgroundColor: colors.white }]}>
                 { /* Header */}
                 <View style={styles.headerContainer}>
                     <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30 }}>
-                        <Button title="Back" color={settings.darkMode ? colors.secondary : colors.primary} onPress={() => navigation.navigate('Home')} />
+                        <Button title="Back" color={colors.secondary} onPress={() => navigation.navigate('Home')} />
                     </View>
                     
                     <View style={{ flex: 1, alignItems: 'center' }}>
-                        <Text style={[styles.headerText, { color: settings.darkMode ? colors.white : colors.black }]}>
+                        <Text style={[styles.headerText, { color: colors.black }]}>
                             Your Friends
                         </Text>
                     </View>
 
                     <View style={{ position: 'absolute', right: 15, top: Platform.OS === 'ios' ? 50 : 30}}>
                         <Pressable onPress={() => setRequestModalVisible(true)}>
-                            <FontAwesome name="bell" size={35} color={settings.darkMode ? colors.white : colors.black} />
+                            <FontAwesome name="bell" size={35} color={colors.black} />
                         </Pressable>
                     </View>
                 </View>
@@ -395,10 +396,10 @@ const FriendsScreen = ({ navigation }) => {
                     <View style={styles.modalBackground}>
                         <View style={styles.modalContainer}>
                             <View style={styles.tabBar}>
-                                <Pressable onPress={() => setActiveTab("received")} style={[styles.tab, activeTab === "received" && styles.activeTab]}>
+                                <Pressable onPress={() => setActiveTab("received")} style={[styles.tab, activeTab === "received" && { borderColor: colors.secondary }]}>
                                     <Text>Received</Text>
                                 </Pressable>
-                                <Pressable onPress={() => setActiveTab("sent")} style={[styles.tab, activeTab === "sent" && styles.activeTab]}>
+                                <Pressable onPress={() => setActiveTab("sent")} style={[styles.tab, activeTab === "sent" && { borderColor: colors.secondary }]}>
                                     <Text>Sent</Text>
                                 </Pressable>
                             </View>
@@ -436,7 +437,7 @@ const FriendsScreen = ({ navigation }) => {
                 { /* Friends List */}
                 <View style={styles.friendList}>
                     {friends.length === 0 ? (
-                        <Text style={[styles.noFriendsText, { color: settings.darkMode ? colors.white : colors.black }]}>You have no friends</Text>
+                        <Text style={[styles.noFriendsText, { color: colors.black }]}>You have no friends</Text>
                     ) : (
                         <FlatList
                             data={friends}
@@ -474,7 +475,7 @@ const FriendsScreen = ({ navigation }) => {
 
                                 <View style={{ flexDirection: "row", width: "100%", marginTop: 10 }}>
                                     {/* Left: Character Image */}
-                                    <View style={styles.friendImageBackground}>
+                                    <View style={[styles.friendImageBackground, { backgroundColor: colors.primarySoft }]}>
                                         <View style={styles.friendImageContainer}>
                                             <Image source={{ uri: selectedFriend?.equipped?.body }} style={styles.image} />
                                             <Image source={{ uri: selectedFriend?.equipped?.shoes }} style={styles.image} />
@@ -530,11 +531,11 @@ const FriendsScreen = ({ navigation }) => {
             </Modal>
 
             { /* Navbar */}
-            <View style={[styles.navbar, {backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]}>
+            <View style={[styles.navbar, {backgroundColor: colors.primary}]}>
                 <CustomMenu navbarVisible={navbarVisible}/>
                 <View style={{width: "65%"}}></View>
                 <Pressable style={styles.addFriend} onPress={() => setModalVisible(true)}>
-                    <Entypo name="add-user" size={70} color={settings.darkMode ? colors.white : colors.black} />
+                    <Entypo name="add-user" size={70} color={colors.black} />
                 </Pressable>
             </View>
 
@@ -567,9 +568,6 @@ const FriendsScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    activeTab: {
-        borderColor: colors.secondary,
-    },
     addFriend: {
         width: "17.5%",
         height: 75,
@@ -588,7 +586,6 @@ const styles = StyleSheet.create({
     },
     friendImageBackground: {
         alignItems: "center",
-        backgroundColor: colors.primarySoft,
         borderRadius: 10,
         padding: 10,
     },
@@ -600,7 +597,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     friendItem: {
-        backgroundColor: colors.primarySoft,
         borderRadius: 12,
         paddingVertical: 12,
         marginBottom: 10,

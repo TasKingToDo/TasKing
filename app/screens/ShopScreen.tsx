@@ -8,7 +8,8 @@ import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 //npm install react-native-tab-view
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
-import colors from '../config/colors';
+import { themes } from '../config/colors';
+import useTheme from '../config/useTheme';
 import { SettingsContext } from '../config/SettingsContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '../config/authContext';
@@ -76,42 +77,14 @@ function useOrderedData (category, data) {
   return [ orderedData, unownedItems ];
 }
 
-//Tab menu flatlist base - sent data to display
-//renders shop and updates equipped items when pressed
-const ShopMenu: React.FC<ShopMenuProps> = memo(({ category, equipItem, unlockItem, data = [] }) => {
-  //Reordering data and figuring out which ones are new
-  const [orderedData, unownedItems] = useOrderedData(category, data);
-
-  return (
-    //render flatlist
-    <FlatList
-      style={styles.flatListContainer}
-      numColumns={numColumns}
-      data={orderedData}
-      keyExtractor={(item, index) => item.id?.toString() || index.toString()}
-      renderItem={({ item }) => (
-        <View style={styles.flatListContainer}>
-        <Pressable
-          style={({ pressed }) => ({
-            backgroundColor: pressed ? colors.emphasis : colors.primarySoft,
-          })}
-            onPress={() => unownedItems.includes(item) ? unlockItem(category, item) : equipItem(category, item)}>
-            <ImageBackground source={{ uri: item }} style={styles.blockedThumbnails}>
-              {unownedItems.includes(item) && (<Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/blocked_item.png?alt=media&token=eb83ac1f-cff7-48de-81d6-8aed6f168850" }}
-                resizeMode="cover" style={styles.thumbnails} />)}
-            </ImageBackground>
-          </Pressable>
-        </View>
-      )}
-    />
-  );
-});
-
 //Shop tabs instantiation
 const Tab = createMaterialTopTabNavigator();
 
 //Main - container display
 const ShopScreen = () => {
+  // Set up colors for proper theme usage
+  const colors = useTheme();
+
   //Fetch user id
   const { user } = useContext(authContext);
   //Fetch user & stat data
@@ -309,9 +282,40 @@ const ShopScreen = () => {
     return [];
   }, [userDocRef]);
 
+  //Tab menu flatlist base - sent data to display
+  //renders shop and updates equipped items when pressed
+  const ShopMenu: React.FC<ShopMenuProps> = memo(({ category, equipItem, unlockItem, data = [] }) => {
+    //Reordering data and figuring out which ones are new
+    const [orderedData, unownedItems] = useOrderedData(category, data);
+
+    return (
+      //render flatlist
+      <FlatList
+        style={[styles.flatListContainer, { backgroundColor: colors.primarySoft }]}
+        numColumns={numColumns}
+        data={orderedData}
+        keyExtractor={(item, index) => item.id?.toString() || index.toString()}
+        renderItem={({ item }) => (
+          <View style={[styles.flatListContainer, { backgroundColor: colors.primarySoft }]}>
+            <Pressable
+              style={({ pressed }) => ({
+              backgroundColor: pressed ? colors.emphasis : colors.primarySoft,
+              })}
+              onPress={() => unownedItems.includes(item) ? unlockItem(category, item) : equipItem(category, item)}>
+              <ImageBackground source={{ uri: item }} style={styles.blockedThumbnails}>
+                {unownedItems.includes(item) && (<Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/blocked_item.png?alt=media&token=eb83ac1f-cff7-48de-81d6-8aed6f168850" }}
+                  resizeMode="cover" style={styles.thumbnails} />)}
+              </ImageBackground>
+            </Pressable>
+          </View>
+        )}
+      />
+    );
+  });
+
   return (
-    <SafeAreaProvider style={styles.background}>
-      <SafeAreaView style={styles.background}>
+    <SafeAreaProvider style={[styles.background, { backgroundColor: colors.primarySoft }]}>
+      <SafeAreaView style={[styles.background, { backgroundColor: colors.primarySoft }]}>
         {/* Top half of screen (display of the character) */}
         <View style={styles.imageContainer}>
           <Image source={{ uri: bg }} style={styles.bgImage} />
@@ -322,12 +326,12 @@ const ShopScreen = () => {
           <Image source={{ uri: equipped.hat }} style={styles.hatImage} />
           <Image source={{ uri: equipped.acc }} style={styles.image} />
         </View>
-        <View style={styles.coinCountContainer}>
+        <View style={[styles.coinCountContainer, { backgroundColor: colors.secondary }]}>
           <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/coin.png?alt=media&token=e0a45910-fae9-4c15-a462-19154f025f64" }} style={styles.coinImage} />
-          <Text style={styles.coinText}>{balance}</Text>
+          <Text style={[styles.coinText, { color: colors.black }]}>{balance}</Text>
         </View>
         {/* Bottom half of screen (display of shop tab menu) */}
-        <View style={styles.shopContainer}>
+        <View style={[styles.shopContainer, { backgroundColor: colors.primarySoft }]}>
           <NavigationIndependentTree>
             <NavigationContainer>
               <Tab.Navigator
@@ -360,12 +364,10 @@ const styles = StyleSheet.create({
   background: {
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height,
-    backgroundColor: colors.primarySoft,
     paddingTop: 16,
     paddingBottom: 16,
   },
   flatListContainer: {
-    backgroundColor: colors.primarySoft,
     marginVertical: 5,
     marginHorizontal: 6,
     paddingBottom: 8,
@@ -380,14 +382,12 @@ const styles = StyleSheet.create({
   coinCountContainer: {
     width: Dimensions.get('window').width,
     height: 25,
-    backgroundColor: colors.secondary,
     flexDirection: 'row',
     justifyContent: 'center',
   },
   shopContainer: {
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height,
-    backgroundColor: colors.primarySoft,
     paddingTop: 16,
     paddingBottom: 16,
     flex: 1,
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   },
   bgImage: {
     width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height / 2,
+    height: Dimensions.get('window').height / 1.9,
     resizeMode: 'cover',
     
   },
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     paddingTop: 20,
     top: -100,
-    left: 69,
+    left: 74,
   },
   coinImage: {
     width: 21,
@@ -433,7 +433,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     paddingRight: 5,
     fontWeight: 'bold',
-    color: colors.white,
   },
 })
 
