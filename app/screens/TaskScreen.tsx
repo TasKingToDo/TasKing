@@ -6,7 +6,8 @@ import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { collection, deleteDoc, doc, getDocs, updateDoc, query, where, getDoc, onSnapshot, increment, setDoc } from "firebase/firestore";
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import colors from '../config/colors';
+
+import useTheme from '../config/useTheme';
 import { SettingsContext } from '../config/SettingsContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '../config/authContext';
@@ -30,6 +31,7 @@ type Task = {
 
 const TaskScreen = () => {
     const settings = useContext(SettingsContext);
+    const colors = useTheme();
     const { user } = useContext(authContext);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
@@ -422,11 +424,13 @@ const TaskScreen = () => {
 
                     {tasks.length > 0 && (
                         <View style={styles.sortContainer}>
-                            <Text style={styles.sortLabel}>Sort By:</Text>
+                            <Text style={[styles.sortLabel, { color: colors.black}]}>Sort By:</Text>
                             <Picker
                                 selectedValue={sortOption}
                                 onValueChange={(itemValue) => setSortOption(itemValue)}
-                                style={styles.sortPicker}
+                                style={[styles.sortPicker, { color: colors.black}]}
+                                mode="dropdown"
+                                dropdownIconColor={colors.black}
                             >
                                 <Picker.Item label="Name" value="name" />
                                 <Picker.Item label="Date" value="date" />
@@ -462,21 +466,21 @@ const TaskScreen = () => {
                                         <View style={[
                                             styles.taskContainer,
                                             item.completed && styles.completedTask,
-                                            { backgroundColor: settings.darkMode ? colors.black : colors.white }
+                                            { backgroundColor: colors.white }
                                         ]}>
                                             <View style={styles.headerRow}>
-                                                <Text style={[styles.taskTitle, { color: settings.darkMode ? colors.white : colors.black }]}>
+                                                <Text style={[styles.taskTitle, { color: colors.black }]}>
                                                     {item.name} {item.completed ? "✅" : ""}
                                                 </Text>
                                                 <TouchableOpacity onPress={() => handleNotificationPress(item.id)}>
                                                     <Icon name="bell" size={20} color={item.notificationPreset ? 'orange' : 'gray'} />
                                                 </TouchableOpacity>
                                             </View>
-                                            <Text style={[styles.taskDetails, { color: settings.darkMode ? colors.white : colors.black }]}>
+                                            <Text style={[styles.taskDetails, { color: colors.black }]}>
                                                 📅 {item.date} ⏰ {item.time}
                                             </Text>
                                             {item.repeat !== "none" && (
-                                                <Text style={[styles.taskDetails, { color: settings.darkMode ? colors.white : colors.black }]}>
+                                                <Text style={[styles.taskDetails, { color: colors.black }]}>
                                                     🔁 Repeat: {formatRepeat(item.repeat)}
                                                 </Text>
                                             )}
@@ -487,7 +491,7 @@ const TaskScreen = () => {
                                                             <Text style={[
                                                                 styles.taskDetails,
                                                                 { 
-                                                                    color: settings.darkMode ? colors.white : colors.black,
+                                                                    color: colors.black,
                                                                     textDecorationLine: subtask.completed ? 'line-through' : 'none',
                                                                     opacity: subtask.completed ? 0.5 : 1,
                                                                 }

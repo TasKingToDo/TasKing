@@ -5,7 +5,8 @@ import Popover from 'react-native-popover-view';
 import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { useNavigation } from 'expo-router';
 
-import colors from "./colors";
+import { themes } from '../config/colors';
+import useTheme from '../config/useTheme';
 import { SettingsContext } from './SettingsContext';
 import { authContext } from './authContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
@@ -13,6 +14,9 @@ import { FIREBASE_DB } from '@/firebaseConfig';
 const CustomMenu = ({navbarVisible}) => {
     const [showPopover, setShowPopover] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
+
+    // Color Themes
+    const colors = useTheme();
 
     // Resolution progress
     const [currentResolution, setCurrentResolution] = useState("4-bit");
@@ -144,41 +148,41 @@ const CustomMenu = ({navbarVisible}) => {
             <Popover 
                 from={(
                     <Pressable style={styles.menu} onPress={() => setShowPopover(true)}>
-                        <Entypo name="menu" color={settings.darkMode ? colors.white : colors.black} size={70} />
+                        <Entypo name="menu" color={colors.black} size={70} />
                     </Pressable>
                 )}
                 isVisible={showPopover}
                 onRequestClose={handleCloseMenu}
                 backgroundStyle={{backgroundColor: 'transparent'}}
                 arrowSize={{width: 25, height: 15}}
-                popoverStyle={{backgroundColor: settings.darkMode ? colors.secondary : colors.primary}}>
+                popoverStyle={{backgroundColor: colors.primary}}>
                 <View>
                     <Pressable style={styles.buttonItems} onPress={handleFriendsNav}>
-                        <Entypo name="user" color={settings.darkMode ? colors.white : colors.black} size={50} />
-                        <View style={styles.divider}></View>
+                        <Entypo name="user" color={colors.black} size={50} />
+                        <View style={[styles.divider, { backgroundColor: colors.primary }]}></View>
                         <Text></Text>
-                        <Text style={{fontSize: 40, color: settings.darkMode ? colors.white : colors.black}}>Friends</Text>
+                        <Text style={{fontSize: 40, color: colors.black}}>Friends</Text>
                     </Pressable>
                     <View style={{height: 4}}></View>
                     <Pressable style={styles.buttonItems} onPress={handleStatsNav}>
-                        <Entypo name="line-graph" color={settings.darkMode ? colors.white : colors.black} size={50} />
-                        <View style={styles.divider}></View>
+                        <Entypo name="line-graph" color={colors.black} size={50} />
+                        <View style={[styles.divider, { backgroundColor: colors.primary }]}></View>
                         <Text></Text>
-                        <Text style={{fontSize: 40, color: settings.darkMode ? colors.white : colors.black}}>Statistics</Text>
+                        <Text style={{fontSize: 40, color: colors.black}}>Statistics</Text>
                     </Pressable>
                     <View style={{height: 4}}></View>
                     <Pressable style={styles.buttonItems} onPress={handleResolutionPress}>
-                        <Entypo name="arrow-up" color={settings.darkMode ? colors.white : colors.black} size={50} />
-                        <View style={styles.divider}></View>
+                        <Entypo name="arrow-up" color={colors.black} size={50} />
+                        <View style={[styles.divider, { backgroundColor: colors.primary }]}></View>
                         <Text></Text>
-                        <Text style={{fontSize: 40, color: settings.darkMode ? colors.white : colors.black}}>Resolution</Text>
+                        <Text style={{fontSize: 40, color: colors.black}}>Resolution</Text>
                     </Pressable>
                     <View style={{height: 4}}></View>
                     <Pressable style={styles.buttonItems} onPress={handleSettingsNav}>
-                        <Entypo name="cog" color={settings.darkMode ? colors.white : colors.black} size={50} />
-                        <View style={styles.divider}></View>
+                        <Entypo name="cog" color={colors.black} size={50} />
+                        <View style={[styles.divider, { backgroundColor: colors.primary }]}></View>
                         <Text></Text>
-                        <Text style={{fontSize: 40, color: settings.darkMode ? colors.white : colors.black}}>Settings</Text>
+                        <Text style={{fontSize: 40, color: colors.black}}>Settings</Text>
                     </Pressable>
                 </View>
             </Popover>
@@ -195,7 +199,7 @@ const CustomMenu = ({navbarVisible}) => {
 
                         {/* 4-bit Resolution (Always Available) */}
                         <Pressable 
-                            style={[styles.resolutionButton, currentResolution === "4-bit" && styles.selectedResolution]} 
+                            style={[styles.resolutionButton, currentResolution === "4-bit" && [styles.selectedResolution, { borderColor: colors.primary }]]} 
                             onPress={() => handleResolutionSelect("4-bit")}
                         >
                             <Text style={styles.resolutionText}>4-bit</Text>
@@ -206,7 +210,7 @@ const CustomMenu = ({navbarVisible}) => {
                             style={[
                                 styles.resolutionButton, 
                                 (!unlockedResolutions.includes("8-bit") && (progress < 100 || balance < 100)) && styles.locked,
-                                currentResolution === "8-bit" && styles.selectedResolution
+                                currentResolution === "8-bit" && [styles.selectedResolution, { borderColor: colors.primary }]
                             ]} 
                             onPress={() => handleResolutionSelect("8-bit")}
                             disabled={!unlockedResolutions.includes("8-bit") && (progress < 100 || balance < 100)}
@@ -221,7 +225,7 @@ const CustomMenu = ({navbarVisible}) => {
                             style={[
                                 styles.resolutionButton, 
                                 (!unlockedResolutions.includes("16-bit") && (progress < 400 || balance < 250)) && styles.locked,
-                                currentResolution === "16-bit" && styles.selectedResolution
+                                currentResolution === "16-bit" && [styles.selectedResolution, { borderColor: colors.primary }]
                             ]} 
                             onPress={() => handleResolutionSelect("16-bit")}
                             disabled={!unlockedResolutions.includes("16-bit") && (progress < 400 || balance < 250)}
@@ -253,7 +257,6 @@ const styles = StyleSheet.create({
     },
     divider: {
         width: "3%",
-        backgroundColor: colors.primary,
     },
     menu: {
         height: 75,
@@ -292,10 +295,8 @@ const styles = StyleSheet.create({
     },
     selectedResolution: {
         borderWidth: 3,
-        borderColor: colors.primary,
     },
     locked: {
-        backgroundColor: colors.white,
         opacity: 0.5,
     },
 })

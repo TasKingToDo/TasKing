@@ -7,7 +7,7 @@ import Slider from '@react-native-community/slider';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-import colors from '../config/colors';
+import useTheme from '../config/useTheme';
 import { SettingsContext } from '../config/SettingsContext';
 import CustomMenu from '../config/customMenu';
 import { FIREBASE_DB } from '@/firebaseConfig';
@@ -26,6 +26,7 @@ const difficultyLevels = [
 
 const CreateTaskScreen = ({navigation}) => {
     const { user } = useContext(authContext);
+    const colors = useTheme();
     const [name, setName] = useState('');
     const [date, setDate] = useState('');
     const [dateError, setDateError] = useState('');
@@ -204,14 +205,14 @@ const CreateTaskScreen = ({navigation}) => {
                 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
                     <View style={{flex: 1}}>
                         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-                            <View style={[styles.background, { backgroundColor: settings.darkMode ? colors.black : colors.white }]}>
+                            <View style={[styles.background, { backgroundColor: colors.white }]}>
                                 {/* Header */}
                                 <View style={styles.headerContainer}>
                                     <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30 }}>
-                                        <Button title="Back" color={settings.darkMode ? colors.secondary : colors.primary} onPress={() => navigation.goBack()} />
+                                        <Button title="Back" color={colors.primary} onPress={() => navigation.goBack()} />
                                     </View>
                                     <View style={{ flex: 1, alignItems: 'center' }}>
-                                        <Text style={[styles.headerText, { color: settings.darkMode ? colors.white : colors.black }]}>
+                                        <Text style={[styles.headerText, { color: colors.black }]}>
                                             Creating Task
                                         </Text>
                                     </View>
@@ -220,29 +221,29 @@ const CreateTaskScreen = ({navigation}) => {
                                 {/* TextInputs */}
                                 <View style={styles.formContainer}>
                                     <TextInput
-                                        style={[styles.textInput, {width: 410, borderColor: settings.darkMode ? colors.white : colors.black, color: settings.darkMode ? colors.white : colors.black, alignSelf: 'stretch'}]}
+                                        style={[styles.textInput, {width: 410, borderColor: colors.black, color: colors.black, alignSelf: 'stretch'}]}
                                         value={name}
                                         onChangeText={(text) => {setName(text)}}
                                         placeholder="Name"
-                                        placeholderTextColor={settings.darkMode ? colors.white : colors.black}
+                                        placeholderTextColor={colors.black}
                                         autoCapitalize="none"
                                     />
                                     <View style={styles.row}>
                                         <TextInput 
-                                            style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black, color: settings.darkMode ? colors.white : colors.black, alignSelf: 'stretch'}]}
+                                            style={[styles.textInput, {borderColor: colors.black, color: colors.black, alignSelf: 'stretch'}]}
                                             value={date}
                                             onChangeText={handleDateChange}
                                             placeholder="YYYY-MM-DD"
-                                            placeholderTextColor={settings.darkMode ? colors.white : colors.black}
+                                            placeholderTextColor={colors.black}
                                             keyboardType="numeric"
                                             maxLength={10}
                                         />
                                         <TextInput
-                                            style={[styles.textInput, {borderColor: settings.darkMode ? colors.white : colors.black, color: settings.darkMode ? colors.white : colors.black, alignSelf: 'stretch'}]}
+                                            style={[styles.textInput, {borderColor: colors.black, color: colors.black, alignSelf: 'stretch'}]}
                                             value={time}
                                             onChangeText={handleTimeChange}
                                             placeholder="HH:MM AM/PM"
-                                            placeholderTextColor={settings.darkMode ? colors.white : colors.black}
+                                            placeholderTextColor={colors.black}
                                             keyboardType="default"
                                             maxLength={8}
                                         />
@@ -251,18 +252,18 @@ const CreateTaskScreen = ({navigation}) => {
 
                                 {/* Repeat Select */}
                                 <View style={[styles.sectionContainer, { marginTop: 20 }]}>
-                                    <Text style={{ textDecorationLine: "underline", fontSize: 25, color: settings.darkMode ? colors.white : colors.black }}>Repeat?</Text>
-                                    <View style={[styles.pickerWrapper, { borderColor: settings.darkMode ? colors.white : colors.black }]}>
+                                    <Text style={{ textDecorationLine: "underline", fontSize: 25, color: colors.black }}>Repeat?</Text>
+                                    <View style={[styles.pickerWrapper, { borderColor: colors.black }]}>
                                         <Picker
                                             selectedValue={repeat}
                                             style={[
                                                 styles.repeatPickers, 
                                                 { 
-                                                    color: settings.darkMode ? colors.white : colors.black, 
-                                                    borderColor: settings.darkMode ? colors.white : colors.black 
+                                                    color: colors.black, 
+                                                    borderColor: colors.black 
                                                 }
                                             ]}
-                                            dropdownIconColor={settings.darkMode ? colors.white : colors.black} // Changes arrow color
+                                            dropdownIconColor={colors.black} // Changes arrow color
                                             onValueChange={(itemValue) => setRepeat(itemValue)}
                                         >
                                             <Picker.Item label="None" value="none" />
@@ -274,32 +275,32 @@ const CreateTaskScreen = ({navigation}) => {
                                     </View>
                                     {repeat === "custom" && (
                                         <View style={{ flexDirection: "row", alignItems: "center", marginTop: 10}}>
-                                            <Text style={{ color: settings.darkMode ? colors.white : colors.black, fontSize: 15, marginHorizontal: 10 }}>Every</Text>
+                                            <Text style={{ color: colors.black, fontSize: 15, marginHorizontal: 10 }}>Every</Text>
                                             <TextInput
                                                 style={{
                                                     borderBottomWidth: 1,
-                                                    borderColor: settings.darkMode ? colors.white : colors.black,
+                                                    borderColor: colors.black,
                                                     width: 40,
                                                     textAlign: 'center',
                                                     marginHorizontal: 10,
-                                                    color: settings.darkMode ? colors.white : colors.black
+                                                    color: colors.black
                                                 }}
                                                 keyboardType="numeric"
                                                 value={customRepeatValue}
                                                 onChangeText={setCustomRepeatValue}
-                                                placeholderTextColor={settings.darkMode ? colors.white : colors.black}
+                                                placeholderTextColor={colors.black}
                                             />
-                                            <View style={[styles.pickerWrapper, { borderColor: settings.darkMode ? colors.white : colors.black, marginHorizontal: 10 }]}>
+                                            <View style={[styles.pickerWrapper, { borderColor: colors.black, marginHorizontal: 10 }]}>
                                                 <Picker
                                                     selectedValue={customRepeatType}
                                                     style={[
                                                         styles.repeatPickers, 
                                                         { 
-                                                            color: settings.darkMode ? colors.white : colors.black, 
-                                                            borderColor: settings.darkMode ? colors.white : colors.black
+                                                            color: colors.black, 
+                                                            borderColor: colors.black
                                                         }
                                                     ]}
-                                                    dropdownIconColor={settings.darkMode ? colors.white : colors.black} // Changes arrow color
+                                                    dropdownIconColor={colors.black} // Changes arrow color
                                                     onValueChange={(itemValue) => setCustomRepeatType(itemValue)}
                                                 >
                                                     <Picker.Item label="Days" value="days" />
@@ -313,8 +314,8 @@ const CreateTaskScreen = ({navigation}) => {
 
                                 {/* Difficulty Slider */}
                                 <View style={styles.sectionContainer}>
-                                    <Text style={{ textDecorationLine: "underline", fontSize: 25, color: settings.darkMode ? colors.white : colors.black }}>Difficulty:</Text>
-                                    <Text style={{ fontSize: 20, fontWeight: "bold", color: settings.darkMode ? colors.white : colors.black }}>{difficultyLevels[difficultyIndex].label}</Text>
+                                    <Text style={{ textDecorationLine: "underline", fontSize: 25, color: colors.black }}>Difficulty:</Text>
+                                    <Text style={{ fontSize: 20, fontWeight: "bold", color: colors.black }}>{difficultyLevels[difficultyIndex].label}</Text>
                                     <Slider
                                         style={{ width: 250, height: 40 }}
                                         minimumValue={0}
@@ -331,7 +332,7 @@ const CreateTaskScreen = ({navigation}) => {
                                         maximumTrackTintColor={colors.secondary}
                                         thumbTintColor={colors.accept}
                                     />
-                                    <Text style={{ fontSize: 16, color: settings.darkMode ? colors.white : colors.black }}>
+                                    <Text style={{ fontSize: 16, color: colors.black }}>
                                         Reward: {difficultyLevels[difficultyIndex].xp} XP | {difficultyLevels[difficultyIndex].balance} Coins
                                     </Text>
                                 </View>
@@ -340,20 +341,20 @@ const CreateTaskScreen = ({navigation}) => {
                                 <View style={styles.subtaskContainer}>
                                     {/* Header */}
                                     <View style={styles.subtaskHeader}>
-                                        <Text style={{ textDecorationLine: "underline", fontSize: 25, color: settings.darkMode ? colors.white : colors.black }}>
+                                        <Text style={{ textDecorationLine: "underline", fontSize: 25, color: colors.black }}>
                                             Subtasks
                                         </Text>
                                     </View>
 
-                                    <View style={{width: "100%", height: 1, backgroundColor: settings.darkMode ? colors.white : colors.black, marginVertical: 5}}></View>
+                                    <View style={{width: "100%", height: 1, backgroundColor: colors.black, marginVertical: 5}}></View>
 
                                     {/* Buttons for AI and Manual Subtasks */}
                                     <View style={styles.subtaskButtonContainer}>
                                         <Pressable onPress={handleGenerateSubtasksAI}>
-                                            <MaterialCommunityIcons name="robot" size={40} color={settings.darkMode ? colors.white : colors.black} />
+                                            <MaterialCommunityIcons name="robot" size={40} color={colors.black} />
                                         </Pressable>
                                         <Pressable onPress={handleAddSubtaskManually}>
-                                            <Ionicons name="create-outline" size={40} color={settings.darkMode ? colors.white : colors.black} />
+                                            <Ionicons name="create-outline" size={40} color={colors.black} />
                                         </Pressable>
                                     </View>
 
@@ -362,7 +363,7 @@ const CreateTaskScreen = ({navigation}) => {
                                         <View key={index} style={styles.subtaskItem}>
                                             {subtask.editable ? (
                                                 <TextInput
-                                                    style={[styles.editSubtaskInput, {color: settings.darkMode ? colors.white : colors.black}]}
+                                                    style={[styles.editSubtaskInput, { borderColor: colors.primary, color: colors.black }]}
                                                     value={subtask.text}
                                                     onChangeText={(text) => updateSubtaskText(index, text)}
                                                     onBlur={() => toggleEditMode(index)}
@@ -370,7 +371,7 @@ const CreateTaskScreen = ({navigation}) => {
                                                 />
                                             ) : (
                                                 <Pressable onPress={() => toggleEditMode(index)} style={{ flex: 1 }}>
-                                                    <Text style={[styles.subtaskText, {color: settings.darkMode ? colors.white : colors.black}]}>{subtask.text}</Text>
+                                                    <Text style={[styles.subtaskText, {color: colors.black}]}>{subtask.text}</Text>
                                                 </Pressable>
                                             )}
                                             
@@ -385,11 +386,11 @@ const CreateTaskScreen = ({navigation}) => {
                         </ScrollView>
 
                         {/* Navbar */}
-                        <View style={[styles.navbar, {backgroundColor: settings.darkMode ? colors.secondary : colors.primary}]}>
+                        <View style={[styles.navbar, {backgroundColor: colors.primary}]}>
                             <CustomMenu navbarVisible={navbarVisible}/>
                             <View style={{width: "65%"}}></View>
                             <Pressable style={styles.saveTask} onPress={handleSaveTask}>
-                                <Text style={{color: settings.darkMode ? colors.white : colors.black, fontSize: 30}}>Save</Text>
+                                <Text style={{color: colors.black, fontSize: 30}}>Save</Text>
                             </Pressable>
                         </View>
                     </View>
@@ -504,7 +505,6 @@ const styles = StyleSheet.create({
     },
     editSubtaskInput: {
         borderBottomWidth: 1,
-        borderColor: colors.primary,
         fontSize: 18,
         flex: 1,
         padding: 5,
