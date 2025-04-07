@@ -7,7 +7,7 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth, on
 import { KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, } from 'react-native';
 import { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import Animated from 'react-native-reanimated';
-import colors from '../config/colors';
+import {themes} from '../config/colors';
 import { SettingsContext } from '../config/SettingsContext';
 import bodyData from '../assets/shopdata/bodyData';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
@@ -145,14 +145,14 @@ const OpeningScreen = ({navigation}) => {
                                     {/* SignUp */}
                                     <View style={[styles.textFields, { display: showSignUp ? 'flex' : 'none' }]}>
                                         <TextInput
-                                            style={[styles.textInput, { borderColor: colors.black}]}
+                                            style={[styles.textInput, { borderColor: themes.light.black}]}
                                             value={email}
                                             placeholder="Set Email"
                                             autoCapitalize="none"
                                             onChangeText={(text) => setEmail(text)}
                                         />
                                         <TextInput 
-                                            style={[styles.textInput, { borderColor: colors.black}]}
+                                            style={[styles.textInput, { borderColor: themes.light.black}]}
                                             value={password}
                                             secureTextEntry={true}
                                             placeholder="Set Password"
@@ -160,27 +160,27 @@ const OpeningScreen = ({navigation}) => {
                                             onChangeText={(text) => setPassword(text)}
                                         />
                                         <TextInput
-                                          style={[styles.textInput, { borderColor: colors.black }]}
+                                          style={[styles.textInput, { borderColor: themes.light.black }]}
                                           value={username}
                                           placeholder="Set Username"
                                           autoCapitalize="none"
                                           onChangeText={(text) => setUsername(text)}
                                         />
                                         <View style={{height: 20}}></View>
-                                        <Button color={colors.accept} title="Confirm Sign Up" onPress={signUp} />
+                                        <Button color={themes.light.accept} title="Confirm Sign Up" onPress={signUp} />
                                     </View>
 
                                     {/* Login */}
                                     <View style={[styles.textFields, { display: showLogin ? 'flex' : 'none' }]}>
                                         <TextInput
-                                            style={[styles.textInput, { borderColor: colors.black}]}
+                                            style={[styles.textInput, { borderColor: themes.light.black}]}
                                             value={email}
                                             placeholder="Enter Email"
                                             autoCapitalize="none"
                                             onChangeText={(text) => setEmail(text)}
                                         />
                                         <TextInput
-                                            style={[styles.textInput, { borderColor: colors.black}]}
+                                            style={[styles.textInput, { borderColor: themes.light.black}]}
                                             value={password}
                                             placeholder="Enter Password"
                                             secureTextEntry={true}
@@ -188,15 +188,15 @@ const OpeningScreen = ({navigation}) => {
                                             onChangeText={(text) => setPassword(text)}
                                         />
                                         <View style={{height: 20}}></View>
-                                        <Button color={colors.accept} title="Confirm Login" onPress={signIn} />
+                                        <Button color={themes.light.accept} title="Confirm Login" onPress={signIn} />
                                     </View>
                                 </View>
 
                                 {/* Buttons */}
                                 <View style={styles.buttons}>
-                                    <Button color={colors.grey} title="Signup" onPress={toggleSignup}/>
+                                    <Button color={themes.light.grey} title="Signup" onPress={toggleSignup}/>
                                     <View style={{width: 15}}/>
-                                    <Button color={colors.primary} title="Login" onPress={toggleLogin}/>
+                                    <Button color={themes.light.primary} title="Login" onPress={toggleLogin}/>
                                 </View>
 
                                 {/* Forgot Password*/}
