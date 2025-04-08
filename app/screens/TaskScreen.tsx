@@ -3,9 +3,10 @@ import { Text, View, StyleSheet, FlatList, Animated, Pressable, TouchableOpacity
 import { Picker } from '@react-native-picker/picker';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, deleteDoc, doc, getDocs, updateDoc, query, where, getDoc, onSnapshot, increment, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, updateDoc, query, where, getDoc, onSnapshot, increment, setDoc } from "firebase/firestore";
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { useNavigation } from "@react-navigation/native";
 
 import useTheme from '../config/useTheme';
 import { SettingsContext } from '../config/SettingsContext';
@@ -27,17 +28,23 @@ type Task = {
     createdAt: string;
     subtasks: Subtask[];
     notificationPreset?: number | null;
+    userId?: string,
+    collaboratorId?: string,
+    collaboratorPermission: string,
 };
 
 const TaskScreen = () => {
     const settings = useContext(SettingsContext);
     const colors = useTheme();
     const { user } = useContext(authContext);
-    const [tasks, setTasks] = useState<Task[]>([]);
+    const [allTasks, setAllTasks] = useState<any[]>([]);
+    const [showOnlyShared, setShowOnlyShared] = useState<boolean>(false);
+    const [userMap, setUserMap] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
     const [expandedTask, setExpandedTask] = useState<string | null>(null);
     const [sortOption, setSortOption] = useState<string>('createdAt');
     const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
+    const navigation = useNavigation();
 
     const [notificationModalVisible, setNotificationModalVisible] = useState(false);
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -45,33 +52,104 @@ const TaskScreen = () => {
 
     useEffect(() => {
         if (!user) return;
-    
-        const q = query(collection(FIREBASE_DB, "tasks"), where("userId", "==", user.uid));
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            let fetchedTasks: Task[] = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    name: data.name,
-                    date: data.date,
-                    time: data.time,
-                    repeat: data.repeat,
-                    completed: data.completed,
-                    createdAt: data.createdAt,
-                    subtasks: (data.subtask ?? []).map((sub: any) => ({
-                        text: sub.text,
-                        completed: sub.completed ?? false,
-                    })),
-                    notificationPreset: data.notificationPreset || null,
-                };
-            });
-    
-            setTasks(sortTasks(fetchedTasks, sortOption));
-            setLoading(false);
+
+        const tasksRef = collection(FIREBASE_DB, "tasks");
+
+        const ownerQuery = query(tasksRef, where("userId", "==", user.uid));
+        const collaboratorQuery = query(tasksRef, where("collaboratorId", "==", user.uid));
+
+        const unsubOwner = onSnapshot(ownerQuery, (ownerSnapshot) => {
+            const ownerTasks = ownerSnapshot.docs.map(doc => normalizeTask(doc.id, doc.data()));
+            setAllTasks(prev => mergeTaskLists(prev, ownerTasks));
         });
+
+        const unsubCollaborator = onSnapshot(collaboratorQuery, (collabSnapshot) => {
+            const collabTasks = collabSnapshot.docs.map(doc => normalizeTask(doc.id, doc.data()));
+            setAllTasks(prev => mergeTaskLists(prev, collabTasks));
+        });
+
+        return () => {
+            unsubOwner();
+            unsubCollaborator();
+        };
+    }, [user]);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            const usersSnapshot = await getDoc(doc(FIREBASE_DB, "users", user.uid));
+            const userMapData: Record<string, string> = {};
     
+            if (usersSnapshot.exists()) {
+                userMapData[user.uid] = usersSnapshot.data().username;
+            }
+    
+            const taskUsers = allTasks.reduce<string[]>((acc, task) => {
+                if (task.userId && !acc.includes(task.userId)) acc.push(task.userId);
+                if (task.collaboratorId && !acc.includes(task.collaboratorId)) acc.push(task.collaboratorId);
+                return acc;
+            }, []);
+    
+            await Promise.all(taskUsers.map(async (uid) => {
+                if (!userMapData[uid]) {
+                    const snap = await getDoc(doc(FIREBASE_DB, "users", uid));
+                    if (snap.exists()) userMapData[uid] = snap.data().username;
+                }
+            }));
+    
+            setUserMap(userMapData);
+        };
+    
+        if (user) fetchUsers();
+    }, [allTasks]);
+
+    useEffect(() => {
+        if (!user) return;
+      
+        const notifRef = collection(FIREBASE_DB, `users/${user.uid}/notifications`);
+        const unsubscribe = onSnapshot(notifRef, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                const data = change.doc.data();
+                Toast.show({
+                    type: 'success',
+                    text1: data.title,
+                    text2: data.message,
+                    position: 'top',
+                    visibilityTime: 5000,
+                });
+                }
+            });
+        });
+      
         return () => unsubscribe();
-    }, [user, sortOption]);
+    }, [user]);   
+    
+    const normalizeTask = (id: string, data: any): Task => {
+        return {
+            id,
+            ...data,
+            subtasks: Array.isArray(data.subtask) ? data.subtask.map((sub: any) => ({text: sub.text, completed: sub.completed ?? false})) : []
+        };
+    };
+    
+    const mergeTaskLists = (prev: any[], incoming: any[]) => {
+        const map = new Map(prev.map(task => [task.id, task]));
+        for (let task of incoming) {
+            map.set(task.id, task);
+        }
+        return sortTasks(Array.from(map.values()), sortOption);
+    };
+
+    const getSharingLabel = (task: Task): string | null => {
+        if (!user || !userMap) return null;
+        if (task.userId === user.uid && task.collaboratorId) {
+          return `Shared with ${userMap[task.collaboratorId] || 'collaborator'}`;
+        }
+        if (task.collaboratorId === user.uid) {
+          return `Shared by ${userMap[task.userId] || 'creator'}`;
+        }
+        return null;
+    };
 
     const scheduleNotification = async (task: Task, presetHours: number) => {
         const taskDueDate = new Date(`${task.date}T${task.time}`);
@@ -111,7 +189,7 @@ const TaskScreen = () => {
 
     const handlePresetSelection = async (presetHours: number) => {
         setNotificationModalVisible(false);
-        const task = tasks.find(t => t.id === selectedTaskId);
+        const task = allTasks.find(t => t.id === selectedTaskId);
         if (task) {
             await scheduleNotification(task, presetHours);
         }
@@ -150,16 +228,14 @@ const TaskScreen = () => {
         const taskXp = taskData.xp || 0;
         const taskBalance = taskData.balance || 0;
         const now = new Date();
-        const todayStr = new Date().toLocaleDateString('en-CA'); // 'YYYY-MM-DD'
+        const todayStr = new Date().toLocaleDateString('en-CA');
         const wasRewarded = taskData.rewarded || false;
     
-        const newXp = markComplete
-            ? (userData.xp || 0) + taskXp
-            : (userData.xp || 0) - taskXp;
+        let baseXp = userData.xp || 0;
+        let baseBalance = userData.balance || 0;
     
-        const newBalance = markComplete
-            ? (userData.balance || 0) + taskBalance
-            : (userData.balance || 0) - taskBalance;
+        let newXp = markComplete ? baseXp + taskXp : baseXp - taskXp;
+        let newBalance = markComplete ? baseBalance + taskBalance : baseBalance - taskBalance;
     
         // === Only update XP/balance/stats if reward state is changing ===
         if (markComplete && !wasRewarded) {
@@ -168,13 +244,33 @@ const TaskScreen = () => {
                 balance: Math.max(0, newBalance),
             });
     
+            // Bonus incentives for shared tasks
+            if (taskData.collaboratorId) {
+                const bonusXp = Math.floor(taskXp * 0.3);
+                const bonusBalance = Math.floor(taskBalance * 0.3);
+    
+                const creatorRef = doc(FIREBASE_DB, "users", taskData.userId);
+                const collaboratorRef = doc(FIREBASE_DB, "users", taskData.collaboratorId);
+        
+                await Promise.all([
+                updateDoc(creatorRef, {
+                    xp: increment(bonusXp),
+                    balance: increment(bonusBalance),
+                }),
+                updateDoc(collaboratorRef, {
+                    xp: increment(bonusXp),
+                    balance: increment(bonusBalance),
+                }),
+                ]);
+            }
+    
             // Handle repeat task scheduling
             if (task.repeat && task.repeat !== "none") {
                 let nextDate = new Date(task.date);
                 if (typeof task.repeat === "object") {
-                    if (task.repeat.type === "days") nextDate.setDate(nextDate.getDate() + task.repeat.interval);
-                    if (task.repeat.type === "weeks") nextDate.setDate(nextDate.getDate() + task.repeat.interval * 7);
-                    if (task.repeat.type === "months") nextDate.setMonth(nextDate.getMonth() + task.repeat.interval);
+                if (task.repeat.type === "days") nextDate.setDate(nextDate.getDate() + task.repeat.interval);
+                if (task.repeat.type === "weeks") nextDate.setDate(nextDate.getDate() + task.repeat.interval * 7);
+                if (task.repeat.type === "months") nextDate.setMonth(nextDate.getMonth() + task.repeat.interval);
                 } else if (task.repeat === "daily") {
                     nextDate.setDate(nextDate.getDate() + 1);
                 } else if (task.repeat === "weekly") {
@@ -190,8 +286,8 @@ const TaskScreen = () => {
                 });
             } else {
                 await updateDoc(taskRef, {
-                    completed: true,
-                    rewarded: true
+                completed: true,
+                rewarded: true
                 });
             }
     
@@ -214,132 +310,136 @@ const TaskScreen = () => {
                     totalBalanceEarned: increment(taskBalance),
                     totalXpEarned: increment(taskXp),
                     lastTaskCompletedDate: now.toISOString(),
-                };
+            };
     
-                const startOfWeek = new Date(now);
-                startOfWeek.setDate(now.getDate() - now.getDay());
-                startOfWeek.setHours(0, 0, 0, 0);
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - now.getDay());
+            startOfWeek.setHours(0, 0, 0, 0);
     
-                const lastCompleted = statsData.lastTaskCompletedDate
-                    ? new Date(statsData.lastTaskCompletedDate)
-                    : null;
-                const completedThisWeek = lastCompleted && lastCompleted >= startOfWeek;
+            const lastCompleted = statsData.lastTaskCompletedDate ? new Date(statsData.lastTaskCompletedDate) : null;
+            const completedThisWeek = lastCompleted && lastCompleted >= startOfWeek;
     
-                updates.tasksCompletedThisWeek = completedThisWeek ? increment(1) : 1;
+            updates.tasksCompletedThisWeek = completedThisWeek ? increment(1) : 1;
     
-                const lastLogin = statsData.lastLoginDate;
-                const lastDate = lastLogin ? new Date(lastLogin) : null;
-                const lastDateStr = lastDate?.toISOString().split("T")[0] ?? null;
+            const lastLogin = statsData.lastLoginDate;
+            const lastDate = lastLogin ? new Date(lastLogin) : null;
+            const lastDateStr = lastDate?.toISOString().split("T")[0] ?? null;
     
-                if (lastDateStr !== todayStr) {
-                    updates.lastLoginDate = todayStr;
-                  
-                    const yesterday = new Date();
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-                    const isYesterday = lastDateStr === yesterdayStr;
-                  
-                    if (isYesterday) {
-                        const nextStreak = (statsData.currentStreak || 0) + 1;
-                        updates.currentStreak = nextStreak;
-                        if (nextStreak > (statsData.longestStreak || 0)) {
-                            updates.longestStreak = nextStreak;
-                        }
-                    } else {
-                        updates.currentStreak = 1;
-                        if ((statsData.longestStreak || 0) < 1) {
-                            updates.longestStreak = 1;
-                        }
+            if (lastDateStr !== todayStr) {
+                updates.lastLoginDate = todayStr;
+        
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+                const isYesterday = lastDateStr === yesterdayStr;
+    
+                if (isYesterday) {
+                    const nextStreak = (statsData.currentStreak || 0) + 1;
+                    updates.currentStreak = nextStreak;
+                    if (nextStreak > (statsData.longestStreak || 0)) {
+                        updates.longestStreak = nextStreak;
                     }
-                }                  
-    
-                await updateDoc(statsRef, updates);
+                } else {
+                    updates.currentStreak = 1;
+                    if ((statsData.longestStreak || 0) < 1) {
+                        updates.longestStreak = 1;
+                    }
+                }
             }
     
+            await updateDoc(statsRef, updates);
+        }
+    
         } else if (!markComplete && wasRewarded) {
-            // === Undo reward ===
             await updateDoc(userRef, {
                 xp: Math.max(0, newXp),
-                balance: Math.max(0, newBalance),
             });
     
             const updates: any = {
                 tasksCompleted: increment(-1),
-                totalBalanceEarned: increment(-taskBalance),
                 totalXpEarned: increment(-taskXp),
                 tasksCompletedThisWeek: increment(-1),
             };
     
             await updateDoc(statsRef, updates);
             await updateDoc(taskRef, { completed: false, rewarded: false });
+
+            if (taskData.collaboratorId) {
+                const bonusXp = Math.floor(taskXp * 0.3);
+        
+                const creatorRef = doc(FIREBASE_DB, "users", taskData.userId);
+                const collaboratorRef = doc(FIREBASE_DB, "users", taskData.collaboratorId);
+        
+                await Promise.all([
+                    updateDoc(creatorRef, {
+                        xp: increment(-bonusXp),
+                    }),
+                    updateDoc(collaboratorRef, {
+                        xp: increment(-bonusXp),
+                    }),
+                ]);
+            }
         } else {
-            // No XP/stat updates needed
             await updateDoc(taskRef, { completed: markComplete });
         }
     
         Toast.show({
             type: markComplete ? 'success' : 'info',
             text1: markComplete ? "Task Completed!" : "Task Undone",
-            text2: markComplete
-                ? `You gained ${taskXp} XP and ${taskBalance} coins.`
-                : `You lost ${taskXp} XP and ${taskBalance} coins.`,
+            text2: markComplete ? `You gained ${taskXp} XP and ${taskBalance} coins.` + (taskData.collaboratorId ? ` (+${Math.floor(taskXp * 0.3)} bonus XP & +${Math.floor(taskBalance * 0.3)} bonus coins for collaboration)` : '') : `You lost ${taskXp} XP.` + (taskData.collaboratorId ? ` (+${Math.floor(taskXp * 0.3)} bonus XP)` : ''),
             position: 'top',
             visibilityTime: 5000,
         });
-    };        
+
+        if (taskData.collaboratorId) {
+            const collaboratorNotifRef = doc(FIREBASE_DB, `users/${taskData.collaboratorId}/notifications`, task.id);
+          
+            await setDoc(collaboratorNotifRef, {
+                title: markComplete ? "Shared Task Completed 🎉" : "Task Reopened ✏️",
+                message: markComplete ? `${userData.username || 'Your friend'} completed "${task.name}"` : `${userData.username || 'Your friend'} reopened "${task.name}"`,
+                createdAt: new Date().toISOString(),
+            });
+        }
+          
+        if (markComplete && !wasRewarded) {
+            const collaboratorNotifRef = doc(FIREBASE_DB, `users/${taskData.collaboratorId}/notifications`, task.id);
+          
+            await setDoc(collaboratorNotifRef, {
+                title: "Shared Task Completed 🎉",
+                message: `${userData.username || 'Your friend'} completed "${task.name}"`,
+                createdAt: new Date().toISOString(),
+            });
+        }
+    };            
 
     const handleCompleteTask = async (task: Task) => {
         const markComplete = !task.completed;
-    
-        // Update subtasks accordingly
-        const updatedSubtasks = task.subtasks.map(sub => ({
-            ...sub,
-            completed: markComplete
-        }));
-    
-        // Update subtasks in Firestore
+        const updatedSubtasks = task.subtasks.map(sub => ({ ...sub, completed: markComplete }));
         const taskRef = doc(FIREBASE_DB, "tasks", task.id);
-        await updateDoc(taskRef, {
-            subtask: updatedSubtasks
-        });
-    
-        // Proceed with reward/stat logic
+        await updateDoc(taskRef, { subtask: updatedSubtasks });
         await updateTaskCompletion({ ...task, subtasks: updatedSubtasks }, markComplete);
-    };       
+    };
 
     const toggleSubtaskCompletion = async (taskId: string, subtaskIndex: number) => {
-        const task = tasks.find(t => t.id === taskId);
+        const task = allTasks.find(t => t.id === taskId);
         if (!task) return;
     
         const updatedSubtasks = [...task.subtasks];
-        const subtask = updatedSubtasks[subtaskIndex];
-    
-        updatedSubtasks[subtaskIndex] = {
-            ...subtask,
-            completed: !subtask.completed,
-        };
-    
+        updatedSubtasks[subtaskIndex].completed = !updatedSubtasks[subtaskIndex].completed;
         const allSubtasksCompleted = updatedSubtasks.every(sub => sub.completed);
         const taskRef = doc(FIREBASE_DB, "tasks", taskId);
     
-        try {
-            // Update just the subtask array first
-            await updateDoc(taskRef, {
-                subtask: updatedSubtasks,
-                completed: allSubtasksCompleted
-            });
+        await updateDoc(taskRef, {
+            subtask: updatedSubtasks,
+            completed: allSubtasksCompleted
+        });
     
-            // Trigger full task logic if needed
-            if (allSubtasksCompleted && !task.completed) {
-                await updateTaskCompletion({ ...task, subtasks: updatedSubtasks }, true);
-            } else if (!allSubtasksCompleted && task.completed) {
-                await updateTaskCompletion({ ...task, subtasks: updatedSubtasks }, false);
-            }
-    
-        } catch (error) {
-            console.error("Error updating subtask:", error);
+        if (allSubtasksCompleted && !task.completed) {
+            await updateTaskCompletion({ ...task, subtasks: updatedSubtasks }, true);
+        } else if (!allSubtasksCompleted && task.completed) {
+            await updateTaskCompletion({ ...task, subtasks: updatedSubtasks }, false);
         }
-    };    
+    };
     
     const sortTasks = (tasks: Task[], option: string): Task[] => {
         return [...tasks].sort((a, b) => {
@@ -350,6 +450,8 @@ const TaskScreen = () => {
             return 0;
         });
     };
+
+    const filteredTasks = showOnlyShared ? allTasks.filter(t => (t.userId === user.uid && !!t.collaboratorId) || t.collaboratorId === user.uid) : allTasks;
     
     const formatRepeat = (repeat: string | { type: string; interval: number; } | null) => {
         if (!repeat || repeat === "none") return "";
@@ -401,12 +503,19 @@ const TaskScreen = () => {
         );
       };
 
-      const handleTaskPress = (taskId: string) => {
-        const task = tasks.find(t => t.id === taskId);
-        if (!task || task.subtasks.length === 0) {
+    const handleTaskPress = (taskId: string) => {
+        const task = allTasks.find(t => t.id === taskId);
+        if (!task || !Array.isArray(task.subtasks) || task.subtasks.length === 0) {
             return;
         }
         setExpandedTask(expandedTask === taskId ? null : taskId);
+    };
+
+    const canEditTask = (task: Task): boolean => {
+        return (
+          task.userId === user.uid ||
+          (task.collaboratorId === user.uid && task.collaboratorPermission === 'edit')
+        );
     };
 
     if (!settings || !user) return null;
@@ -422,7 +531,8 @@ const TaskScreen = () => {
                         </View>
                     ))}
 
-                    {tasks.length > 0 && (
+                    {/* Task Sorter */}
+                    {filteredTasks.length > 0 && (
                         <View style={styles.sortContainer}>
                             <Text style={[styles.sortLabel, { color: colors.black}]}>Sort By:</Text>
                             <Picker
@@ -437,13 +547,18 @@ const TaskScreen = () => {
                                 <Picker.Item label="Time Created (Oldest First)" value="createdAt" />
                                 <Picker.Item label="Time Created (Newest First)" value="reverseCreatedAt" />
                             </Picker>
+                            <TouchableOpacity onPress={() => setShowOnlyShared(!showOnlyShared)} style={styles.sharedToggle}>
+                                <Text style={{ color: colors.black, fontSize: 16 }}>{showOnlyShared ? 'Show All Tasks' : 'Show Shared Only'}</Text>
+                            </TouchableOpacity>
                         </View>
                     )}
-                    {tasks.length === 0 ? (
+
+                    {/* Task List */}
+                    {filteredTasks.length === 0 ? (
                         <Text style={styles.noTasksText}>No tasks available</Text>
                     ) : (
                         <FlatList
-                            data={tasks}
+                            data={filteredTasks}
                             keyExtractor={(item) => item.id}
                             renderItem={({ item }) => (
                                 <Swipeable
@@ -468,22 +583,38 @@ const TaskScreen = () => {
                                             item.completed && styles.completedTask,
                                             { backgroundColor: colors.white }
                                         ]}>
+                                            {/* Task Name, Edit Button, and Notif Bell */}
                                             <View style={styles.headerRow}>
                                                 <Text style={[styles.taskTitle, { color: colors.black }]}>
                                                     {item.name} {item.completed ? "✅" : ""}
                                                 </Text>
+                                                {canEditTask(item) && (
+                                                    <TouchableOpacity style={{left: 130}} onPress={() => navigation.navigate("Create Task", { taskId: item.id })}>
+                                                        <Icon name="edit" size={20} color={colors.grey} />
+                                                    </TouchableOpacity>
+                                                )}
                                                 <TouchableOpacity onPress={() => handleNotificationPress(item.id)}>
                                                     <Icon name="bell" size={20} color={item.notificationPreset ? 'orange' : 'gray'} />
                                                 </TouchableOpacity>
+                                            
                                             </View>
+
+                                            {/* Date and Time */}
                                             <Text style={[styles.taskDetails, { color: colors.black }]}>
                                                 📅 {item.date} ⏰ {item.time}
                                             </Text>
+                                            
+                                            {/* Repeat */}
                                             {item.repeat !== "none" && (
                                                 <Text style={[styles.taskDetails, { color: colors.black }]}>
                                                     🔁 Repeat: {formatRepeat(item.repeat)}
                                                 </Text>
                                             )}
+
+                                            {/* Shared */}
+                                            {getSharingLabel(item) && <Text style={[styles.sharingLabel, { color: colors.secondary }]}>{getSharingLabel(item)}</Text>}
+
+                                            {/* Subtasks */}
                                             {expandedTask === item.id && item.subtasks && item.subtasks.length > 0 && (
                                                 <View>
                                                     {item.subtasks.map((subtask, index) => (
@@ -577,6 +708,16 @@ const styles = StyleSheet.create({
         fontSize: 30,
         fontWeight: "bold",
     },
+    sharedToggle: { 
+        padding: 8, 
+        borderRadius: 8 
+    },
+    sharingLabel: {
+        fontStyle: 'italic',
+        fontSize: 13,
+        marginTop: 2,
+        marginLeft: 4,
+    },  
     sortContainer: { 
         flexDirection: "row", 
         alignItems: "center", 

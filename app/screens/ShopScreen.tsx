@@ -151,7 +151,7 @@ const ShopScreen = () => {
     }, (error) => {
       console.error("Error fetching data:", error);
     });
-    return () => unsubscribe(), unsub(); // Cleanup the listener on component unmount
+    return () => {unsubscribe(); unsub();} // Cleanup the listener on component unmount
   }, [user]);
 
   // Update equipped item in db
@@ -336,7 +336,7 @@ const ShopScreen = () => {
             <NavigationContainer>
               <Tab.Navigator
                 screenOptions={{
-                  tabBarStyle: { backgroundColor: colors.primarySoft },
+                  tabBarStyle: { backgroundColor: colors.emphasis },
                   tabBarActiveTintColor: colors.black,
                   tabBarInactiveTintColor: colors.white,
                 }}>
@@ -388,7 +388,6 @@ const styles = StyleSheet.create({
   shopContainer: {
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height,
-    paddingTop: 16,
     paddingBottom: 16,
     flex: 1,
   },

@@ -148,7 +148,7 @@ const CustomMenu = ({navbarVisible}) => {
             <Popover 
                 from={(
                     <Pressable style={styles.menu} onPress={() => setShowPopover(true)}>
-                        <Entypo name="menu" color={colors.black} size={70} />
+                        <Entypo name="menu" color={themes.light.black} size={70} />
                     </Pressable>
                 )}
                 isVisible={showPopover}
@@ -158,31 +158,31 @@ const CustomMenu = ({navbarVisible}) => {
                 popoverStyle={{backgroundColor: colors.primary}}>
                 <View>
                     <Pressable style={styles.buttonItems} onPress={handleFriendsNav}>
-                        <Entypo name="user" color={colors.black} size={50} />
+                        <Entypo name="user" color={themes.light.black} size={50} />
                         <View style={[styles.divider, { backgroundColor: colors.primary }]}></View>
                         <Text></Text>
-                        <Text style={{fontSize: 40, color: colors.black}}>Friends</Text>
+                        <Text style={{fontSize: 40, color: themes.light.black}}>Friends</Text>
                     </Pressable>
                     <View style={{height: 4}}></View>
                     <Pressable style={styles.buttonItems} onPress={handleStatsNav}>
-                        <Entypo name="line-graph" color={colors.black} size={50} />
+                        <Entypo name="line-graph" color={themes.light.black} size={50} />
                         <View style={[styles.divider, { backgroundColor: colors.primary }]}></View>
                         <Text></Text>
-                        <Text style={{fontSize: 40, color: colors.black}}>Statistics</Text>
+                        <Text style={{fontSize: 40, color: themes.light.black}}>Statistics</Text>
                     </Pressable>
                     <View style={{height: 4}}></View>
                     <Pressable style={styles.buttonItems} onPress={handleResolutionPress}>
-                        <Entypo name="arrow-up" color={colors.black} size={50} />
+                        <Entypo name="arrow-up" color={themes.light.black} size={50} />
                         <View style={[styles.divider, { backgroundColor: colors.primary }]}></View>
                         <Text></Text>
-                        <Text style={{fontSize: 40, color: colors.black}}>Resolution</Text>
+                        <Text style={{fontSize: 40, color: themes.light.black}}>Resolution</Text>
                     </Pressable>
                     <View style={{height: 4}}></View>
                     <Pressable style={styles.buttonItems} onPress={handleSettingsNav}>
-                        <Entypo name="cog" color={colors.black} size={50} />
+                        <Entypo name="cog" color={themes.light.black} size={50} />
                         <View style={[styles.divider, { backgroundColor: colors.primary }]}></View>
                         <Text></Text>
-                        <Text style={{fontSize: 40, color: colors.black}}>Settings</Text>
+                        <Text style={{fontSize: 40, color: themes.light.black}}>Settings</Text>
                     </Pressable>
                 </View>
             </Popover>

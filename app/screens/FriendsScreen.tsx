@@ -5,6 +5,7 @@ import { Entypo, FontAwesome } from '@expo/vector-icons';
 import { collection, doc, getDoc, updateDoc, query, where, getDocs, addDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import Toast from 'react-native-toast-message';
 
+import { themes } from '../config/colors';
 import useTheme from '../config/useTheme';
 import { SettingsContext } from '../config/SettingsContext';
 import CustomMenu from '../config/customMenu';
@@ -487,7 +488,7 @@ const FriendsScreen = ({ navigation }) => {
                                     </View>
 
                                     {/* Divider Line */}
-                                    <View style={{ width: 1, backgroundColor: colors.black, marginHorizontal: 10 }}></View>
+                                    <View style={{ width: 2, backgroundColor: themes.light.black, marginHorizontal: 10 }}></View>
 
                                     {/* Right: Stats */}
                                     <View style={{ flex: 1 }}>
@@ -535,7 +536,7 @@ const FriendsScreen = ({ navigation }) => {
                 <CustomMenu navbarVisible={navbarVisible}/>
                 <View style={{width: "65%"}}></View>
                 <Pressable style={styles.addFriend} onPress={() => setModalVisible(true)}>
-                    <Entypo name="add-user" size={70} color={colors.black} />
+                    <Entypo name="add-user" size={70} color={themes.light.black} />
                 </Pressable>
             </View>
 
@@ -591,7 +592,7 @@ const styles = StyleSheet.create({
     },
     friendImageContainer: {
         width: 140,
-        height: 170,
+        height: 200,
         position: 'relative',
         justifyContent: 'center',
         alignItems: 'center',
@@ -619,11 +620,11 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     hatImage: {
-        width: "100%",
-        height: "100%",
-        resizeMode: 'contain',
+        width: Dimensions.get('window').width * (2/7),
+        height: Dimensions.get('window').height * (1/7),
+        objectFit: 'fill',
         position: 'absolute',
-        top: -69,
+        top: -40,
     },
     headerContainer: {
         flexDirection: 'row',
@@ -639,9 +640,9 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     image: {
-        width: "100%",
-        height: "100%",
-        resizeMode: 'contain',
+        width: Dimensions.get('window').width * (2/7),
+        height: Dimensions.get('window').height * (1/7),
+        objectFit: 'fill',
         position: 'absolute',
     },
     input: {
