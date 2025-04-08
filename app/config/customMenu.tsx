@@ -19,9 +19,9 @@ const CustomMenu = ({navbarVisible}) => {
     const colors = useTheme();
 
     // Resolution progress
-    const [currentResolution, setCurrentResolution] = useState("4-bit");
+    const [currentResolution, setCurrentResolution] = useState("fourBit");
     const [progress, setProgress] = useState(0);
-    const [unlockedResolutions, setUnlockedResolutions] = useState(["4-bit"]);
+    const [unlockedResolutions, setUnlockedResolutions] = useState(["fourBit"]);
 
     // Fetch Balance from Database
     const [balance, setBalance] = useState(0);
@@ -38,7 +38,7 @@ const CustomMenu = ({navbarVisible}) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 setBalance(data.balance || 0);
-                setCurrentResolution(data.currentresolution || "4-bit");
+                setCurrentResolution(data.currentresolution || "fourBit");
             } else {
                 console.log("No such user document!");
             }
@@ -72,7 +72,7 @@ const CustomMenu = ({navbarVisible}) => {
         }
     
         // If the resolution is already unlocked, simply switch to it
-        if (unlockedResolutions.includes(resolution) || resolution === "4-bit") {
+        if (unlockedResolutions.includes(resolution) || resolution === "fourBit") {
             setCurrentResolution(resolution);
     
             // Update Firestore to store the selected resolution
@@ -86,10 +86,10 @@ const CustomMenu = ({navbarVisible}) => {
         let cost = 0;
         let requiredProgress = 0;
     
-        if (resolution === "8-bit") {
+        if (resolution === "eightBit") {
             cost = 100;
             requiredProgress = 100;
-        } else if (resolution === "16-bit") {
+        } else if (resolution === "sixteenBit") {
             cost = 250;
             requiredProgress = 400;
         }
@@ -197,41 +197,41 @@ const CustomMenu = ({navbarVisible}) => {
                         <Text style={styles.modalTitle}>Select Resolution</Text>
                         <Text style={{fontSize: 15}}> Current Balance: {balance}</Text>
 
-                        {/* 4-bit Resolution (Always Available) */}
+                        {/* fourBit Resolution (Always Available) */}
                         <Pressable 
-                            style={[styles.resolutionButton, currentResolution === "4-bit" && [styles.selectedResolution, { borderColor: colors.primary }]]} 
-                            onPress={() => handleResolutionSelect("4-bit")}
+                            style={[styles.resolutionButton, currentResolution === "fourBit" && [styles.selectedResolution, { borderColor: colors.primary }]]} 
+                            onPress={() => handleResolutionSelect("fourBit")}
                         >
-                            <Text style={styles.resolutionText}>4-bit</Text>
+                            <Text style={styles.resolutionText}>fourBit</Text>
                         </Pressable>
 
-                        {/* 8-bit Resolution */}
+                        {/* eightBit Resolution */}
                         <Pressable 
                             style={[
                                 styles.resolutionButton, 
-                                (!unlockedResolutions.includes("8-bit") && (progress < 100 || balance < 100)) && styles.locked,
-                                currentResolution === "8-bit" && [styles.selectedResolution, { borderColor: colors.primary }]
+                                (!unlockedResolutions.includes("eightBit") && (progress < 100 || balance < 100)) && styles.locked,
+                                currentResolution === "eightBit" && [styles.selectedResolution, { borderColor: colors.primary }]
                             ]} 
-                            onPress={() => handleResolutionSelect("8-bit")}
-                            disabled={!unlockedResolutions.includes("8-bit") && (progress < 100 || balance < 100)}
+                            onPress={() => handleResolutionSelect("eightBit")}
+                            disabled={!unlockedResolutions.includes("eightBit") && (progress < 100 || balance < 100)}
                         >
                             <Text style={styles.resolutionText}>
-                                8-bit {unlockedResolutions.includes("8-bit") ? "" : `(Progress: ${progress}/100, Cost: 100)`}
+                                eightBit {unlockedResolutions.includes("eightBit") ? "" : `(Progress: ${progress}/100, Cost: 100)`}
                             </Text>
                         </Pressable>
 
-                        {/* 16-bit Resolution */}
+                        {/* sixteenBit Resolution */}
                         <Pressable 
                             style={[
                                 styles.resolutionButton, 
-                                (!unlockedResolutions.includes("16-bit") && (progress < 400 || balance < 250)) && styles.locked,
-                                currentResolution === "16-bit" && [styles.selectedResolution, { borderColor: colors.primary }]
+                                (!unlockedResolutions.includes("sixteenBit") && (progress < 400 || balance < 250)) && styles.locked,
+                                currentResolution === "sixteenBit" && [styles.selectedResolution, { borderColor: colors.primary }]
                             ]} 
-                            onPress={() => handleResolutionSelect("16-bit")}
-                            disabled={!unlockedResolutions.includes("16-bit") && (progress < 400 || balance < 250)}
+                            onPress={() => handleResolutionSelect("sixteenBit")}
+                            disabled={!unlockedResolutions.includes("sixteenBit") && (progress < 400 || balance < 250)}
                         >
                             <Text style={styles.resolutionText}>
-                                16-bit {unlockedResolutions.includes("16-bit") ? "" : `(Progress: ${progress}/400, Cost: 250)`}
+                                sixteenBit {unlockedResolutions.includes("sixteenBit") ? "" : `(Progress: ${progress}/400, Cost: 250)`}
                             </Text>
                         </Pressable>
 
