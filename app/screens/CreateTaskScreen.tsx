@@ -1,4 +1,5 @@
-import React, { useContext, useState, useRef } from 'react';
+import React, { useContext, useState, useRef, useEffect } from 'react';
+import { useRoute } from '@react-navigation/native';
 import { View, Text, Button, StyleSheet, Pressable, TextInput, Dimensions, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSharedValue, useDerivedValue } from 'react-native-reanimated';
 import { doc, getDoc, updateDoc, increment, addDoc, collection } from "firebase/firestore";
@@ -7,6 +8,7 @@ import Slider from '@react-native-community/slider';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
+import { themes } from '../config/colors';
 import useTheme from '../config/useTheme';
 import { SettingsContext } from '../config/SettingsContext';
 import CustomMenu from '../config/customMenu';
@@ -40,6 +42,65 @@ const CreateTaskScreen = ({navigation}) => {
     const difficultyIndexRef = useRef(difficultyIndex);
     const translateY = useSharedValue(MID_POSITION);
     const settings = useContext(SettingsContext);
+    const [friends, setFriends] = useState<{ uid: string; username: string }[]>([]);
+    const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
+    const [collaboratorPermission, setCollaboratorPermission] = useState<'complete' | 'edit'>('complete');
+    const route = useRoute();
+    const { taskId } = route.params || {};
+
+
+
+    useEffect(() => {
+        const fetchFriends = async () => {
+            try {
+                const userRef = doc(FIREBASE_DB, "users", user.uid);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    const friendUIDs = data.friends || [];
+    
+                    const friendDataPromises = friendUIDs.map(async (uid: string) => {
+                        const friendSnap = await getDoc(doc(FIREBASE_DB, "users", uid));
+                        if (friendSnap.exists()) {
+                            const friendData = friendSnap.data();
+                            return { uid, username: friendData.username };
+                        }
+                        return null;
+                    });
+    
+                    const resolvedFriends = await Promise.all(friendDataPromises);
+                    setFriends(resolvedFriends.filter(f => f !== null) as any);
+                }
+            } catch (error) {
+                console.error("Failed to fetch friends", error);
+            }
+        };
+    
+        fetchFriends();
+    }, []);
+
+    useEffect(() => {
+        const fetchTask = async () => {
+          if (!taskId) return;
+          const taskDoc = await getDoc(doc(FIREBASE_DB, "tasks", taskId));
+          if (taskDoc.exists()) {
+            const data = taskDoc.data();
+            setName(data.name);
+            setDate(data.date);
+            setTime(data.time);
+            setSubtasks(data.subtask || []);
+            setRepeatData(data.repeat);
+            setSelectedDifficulty({
+              label: data.difficulty,
+              xp: data.xp,
+              balance: data.balance,
+            });
+            setSelectedCollaborator(data.collaboratorId || null);
+            setCollaboratorPermission(data.collaboratorPermission || 'complete');
+          }
+        };
+        fetchTask();
+      }, [taskId]);      
 
     if (!settings || !user) return null;
 
@@ -92,18 +153,27 @@ const CreateTaskScreen = ({navigation}) => {
             const selectedDifficulty = difficultyLevels[difficultyIndex];
     
             // Save the task to Firestore
-            await addDoc(collection(FIREBASE_DB, "tasks"), {
-                userId: user.uid,
-                name: name,
-                date: date,
-                time: time,
-                subtask: subtasks,
-                repeat: repeatData,
-                createdAt: new Date().toISOString(),
-                xp: selectedDifficulty.xp,
-                balance: selectedDifficulty.balance,
-                difficulty: selectedDifficulty.label,
-            });
+            if (taskId) {
+                await updateDoc(doc(FIREBASE_DB, "tasks", taskId), {
+                    name, date, time, subtask: subtasks, repeat: repeatData,
+                    xp: selectedDifficulty.xp,
+                    balance: selectedDifficulty.balance,
+                    difficulty: selectedDifficulty.label,
+                    collaboratorId: selectedCollaborator,
+                    collaboratorPermission,
+                });
+            } else {
+                await addDoc(collection(FIREBASE_DB, "tasks"), {
+                    userId: user.uid,
+                    name, date, time, subtask: subtasks, repeat: repeatData,
+                    createdAt: new Date().toISOString(),
+                    xp: selectedDifficulty.xp,
+                    balance: selectedDifficulty.balance,
+                    difficulty: selectedDifficulty.label,
+                    collaboratorId: selectedCollaborator,
+                    collaboratorPermission,
+                });
+            }             
     
             // Increment tasksCreated in stats
             const statsRef = doc(FIREBASE_DB, "stats", user.uid);
@@ -203,17 +273,17 @@ const CreateTaskScreen = ({navigation}) => {
         <GestureHandlerRootView style={{ flex: 1 }}>
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
-                    <View style={{flex: 1}}>
+                    <View style={{ flex: 1, backgroundColor: colors.white }}>
                         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
                             <View style={[styles.background, { backgroundColor: colors.white }]}>
                                 {/* Header */}
                                 <View style={styles.headerContainer}>
                                     <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30 }}>
-                                        <Button title="Back" color={colors.primary} onPress={() => navigation.goBack()} />
+                                        <Button title="Back" color={colors.secondary} onPress={() => navigation.goBack()} />
                                     </View>
                                     <View style={{ flex: 1, alignItems: 'center' }}>
                                         <Text style={[styles.headerText, { color: colors.black }]}>
-                                            Creating Task
+                                            {taskId ? "Editing Task" : "Creating Task"}
                                         </Text>
                                     </View>
                                 </View>
@@ -252,7 +322,7 @@ const CreateTaskScreen = ({navigation}) => {
 
                                 {/* Repeat Select */}
                                 <View style={[styles.sectionContainer, { marginTop: 20 }]}>
-                                    <Text style={{ textDecorationLine: "underline", fontSize: 25, color: colors.black }}>Repeat?</Text>
+                                    <Text style={{ textDecorationLine: "underline", fontSize: 25, color: colors.black }}>Repeat</Text>
                                     <View style={[styles.pickerWrapper, { borderColor: colors.black }]}>
                                         <Picker
                                             selectedValue={repeat}
@@ -314,7 +384,7 @@ const CreateTaskScreen = ({navigation}) => {
 
                                 {/* Difficulty Slider */}
                                 <View style={styles.sectionContainer}>
-                                    <Text style={{ textDecorationLine: "underline", fontSize: 25, color: colors.black }}>Difficulty:</Text>
+                                    <Text style={{ textDecorationLine: "underline", fontSize: 25, color: colors.black }}>Difficulty</Text>
                                     <Text style={{ fontSize: 20, fontWeight: "bold", color: colors.black }}>{difficultyLevels[difficultyIndex].label}</Text>
                                     <Slider
                                         style={{ width: 250, height: 40 }}
@@ -335,6 +405,55 @@ const CreateTaskScreen = ({navigation}) => {
                                     <Text style={{ fontSize: 16, color: colors.black }}>
                                         Reward: {difficultyLevels[difficultyIndex].xp} XP | {difficultyLevels[difficultyIndex].balance} Coins
                                     </Text>
+                                </View>
+
+                                {/* Collaborator */}
+                                <View style={styles.sectionContainer}>
+                                    <Text style={{ textDecorationLine: "underline", fontSize: 25, color: colors.black }}>
+                                        Collaborator
+                                    </Text>
+
+                                    {/* Collaborator Picker */}
+                                    <View style={[styles.pickerWrapper, { borderColor: colors.black, marginTop: 5 }]}>
+                                        <Picker
+                                            selectedValue={selectedCollaborator}
+                                            onValueChange={(itemValue) => setSelectedCollaborator(itemValue)}
+                                            style={{ color: colors.black }}
+                                            dropdownIconColor={colors.black}
+                                        >
+                                            <Picker.Item label="None" value={null} />
+                                            {friends.map((friend) => (
+                                                <Picker.Item key={friend.uid} label={friend.username} value={friend.uid} />
+                                            ))}
+                                        </Picker>
+                                    </View>
+
+                                    {/* Permission Picker */}
+                                    {selectedCollaborator && (
+                                        <View style={{ marginTop: 15 }}>
+                                            <Text
+                                                style={{
+                                                    fontSize: 18,
+                                                    marginBottom: 5,
+                                                    color: colors.black,
+                                                    flexWrap: 'nowrap',
+                                                }}
+                                            >
+                                                Collaborator Permission
+                                            </Text>
+                                            <View style={[styles.pickerWrapper, { borderColor: colors.black }]}>
+                                                <Picker
+                                                    selectedValue={collaboratorPermission}
+                                                    onValueChange={(value) => setCollaboratorPermission(value)}
+                                                    style={{ color: colors.black }}
+                                                    dropdownIconColor={colors.black}
+                                                >
+                                                    <Picker.Item label="Can Complete Only" value="complete" />
+                                                    <Picker.Item label="Can Edit & Complete" value="edit" />
+                                                </Picker>
+                                            </View>
+                                        </View>
+                                    )}
                                 </View>
 
                                 {/* Subtasking */}
@@ -390,7 +509,7 @@ const CreateTaskScreen = ({navigation}) => {
                             <CustomMenu navbarVisible={navbarVisible}/>
                             <View style={{width: "65%"}}></View>
                             <Pressable style={styles.saveTask} onPress={handleSaveTask}>
-                                <Text style={{color: colors.black, fontSize: 30}}>Save</Text>
+                                <Text style={{color: themes.light.black, fontSize: 30}}>Save</Text>
                             </Pressable>
                         </View>
                     </View>

@@ -183,20 +183,20 @@ const HomeScreen = ({navigation}) => {
                                     width={150}
                                     height={30}
                                     color={colors.accept}
-                                    borderColor={colors.black}
+                                    borderColor={themes.light.black}
                                 />
 
-                                <Text style={[styles.progressText, {color: colors.black}]}>
+                                <Text style={[styles.progressText, {color: themes.light.black}]}>
                                     {Math.round(xpProgress * 100)}%
                                 </Text>
                             </View>
                             <View style={{width: "7%"}} />
-                            <Text style={[styles.levelText, { color: colors.black }]}>
+                            <Text style={[styles.levelText, { color: themes.light.black }]}>
                                 Lvl. {level}
                             </Text>
                         </View>
                         <Pressable style={styles.createTask} onPress={() => navigation.navigate('Create Task')}>
-                            <Feather name="plus-circle" size={70} color={colors.black} />
+                            <Feather name="plus-circle" size={70} color={themes.light.black} />
                         </Pressable>
                     </Animated.View>
                 </GestureHandlerRootView>
