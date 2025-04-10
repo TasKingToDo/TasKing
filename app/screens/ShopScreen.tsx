@@ -29,7 +29,7 @@ type ShopMenuProps = {
   category: string;
   equipItem: (category: string, fourBitUrl: string) => void;
   unlockItem: (category: string, fourBitUrl: string) => void;
-  data: { id: number; fourBitUrl: string }[];
+  data: { id: number; fourBitUrl: string; eightBitUrl: string; sixteenBitUrl: string; }[];
 };
 
 //reorder data such that FlatList will display owned items before unowned
@@ -40,8 +40,6 @@ function useOrderedData (category, data) {
   const [orderedData, setOrderedData] = useState([]);
   //Unowned items
   const [unownedItems, setUnownedItems] = useState([]);
-  //User's currently selected resolution
-  const [resolution, setResolution] = useState("");
 
   //Fetch data from db
   useEffect(() => {
@@ -55,9 +53,9 @@ function useOrderedData (category, data) {
         //container of unowned items
         let unownedData = [];
         //retrieve current resolution
-        setResolution(docSnap.get("currentresolution"));
+        let curRes = docSnap.data().currentresolution;
         //derive db category name
-        const ownedCategory = "owned" + category + resolution;
+        const ownedCategory = "owned" + category + curRes;
         //container of ordered data - owned shows up first in list
         let preorderedData = docSnap.get(ownedCategory) || [];
 
@@ -66,31 +64,32 @@ function useOrderedData (category, data) {
         for (let item of data) {
           //if item is not in orderedData (therefore not owned)
           //eight bit
-          if (resolution == "eightBit" && !preorderedData.includes(item.eightBitUrl)) {
+          if (curRes == "eightBit" && !preorderedData.includes(item.eightBitUrl)) {
             //add to end of orderedData
             preorderedData = [...preorderedData, item.eightBitUrl];
             //add to unownedItems
-            unownedData = [...unownedData, item.fourBitUrl, item.eightBitUrl, item.sixteenBitUrl];
+            unownedData = [...unownedData, item.eightBitUrl];
           }
           //sixteen bit
-          else if (resolution == "sixteenBit" && !preorderedData.includes(item.sixteenBitUrl)) {
+          else if (curRes == "sixteenBit" && !preorderedData.includes(item.sixteenBitUrl)) {
             //add to end of orderedData
             preorderedData = [...preorderedData, item.sixteenBitUrl];
             //add to unownedItems
-            unownedData = [...unownedData, item.fourBitUrl, item.eightBitUrl, item.sixteenBitUrl];
+            unownedData = [...unownedData, item.sixteenBitUrl];
           }
-          //fourBit is the default
-          else {
+          //four bit
+          else if (curRes == "fourBit" && !preorderedData.includes(item.fourBitUrl)) {
             //add to end of orderedData
             preorderedData = [...preorderedData, item.fourBitUrl];
             //add to unownedItems
-            unownedData = [...unownedData, item.fourBitUrl, item.eightBitUrl, item.sixteenBitUrl];
+            unownedData = [...unownedData, item.fourBitUrl];
           }
         }
         setOrderedData(preorderedData);
         setUnownedItems(unownedData);
       }
     });
+    return () => unsubscribe(); // Cleanup the listener on component unmount
   }, [user, category, data]);
   return [ orderedData, unownedItems ];
 }
@@ -148,11 +147,11 @@ const ShopScreen = () => {
         //set background based on time of day
         var hour = new Date().getHours();
         //day
-        if (hour >= 8 && hour <= 18) { setBg(bgData[0].fourBitUrl); }
+        if (hour >= 8 && hour <= 18) { setBg(bgData[0].imageUrl); }
         //night
-        else if (hour < 5 || hour > 22) { setBg(bgData[2].fourBitUrl); }
+        else if (hour < 5 || hour > 22) { setBg(bgData[2].imageUrl); }
         //golden hour
-        else { setBg(bgData[1].fourBitUrl); }
+        else { setBg(bgData[1].imageUrl); }
       } else {
         console.log("No such user document!");
       }
