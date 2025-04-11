@@ -3,7 +3,7 @@ import { StyleSheet, View, Button, Image, TextInput, Pressable, Text, Platform }
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FIREBASE_APP, FIREBASE_DB } from '@/firebaseConfig'
 import { doc, setDoc, onSnapshot } from "firebase/firestore";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth, onAuthStateChanged } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendEmailVerification } from 'firebase/auth';
 import { KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, } from 'react-native';
 import { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import Animated from 'react-native-reanimated';
@@ -59,7 +59,13 @@ const OpeningScreen = ({navigation}) => {
 
     const signIn = async () => {
         try {
-          const response = await signInWithEmailAndPassword(auth, email, password);
+            const response = await signInWithEmailAndPassword(auth, email, password);
+            // Check if user's email is verified
+            if (!response.user.emailVerified) {
+              alert("Please verify your email before logging in.");
+              auth.signOut();
+              return;
+            }
           console.log(response);
 
           //send welcome message with isNewAccount set to false
@@ -77,6 +83,11 @@ const OpeningScreen = ({navigation}) => {
                 // Create a user in Firebase Authentication
                 const response = await createUserWithEmailAndPassword(auth, email, password);
                 const user = response.user;
+                await sendEmailVerification(user);
+                alert(
+                    "Account created! Please check your email and verify your account before logging in."
+                );
+                auth.signOut();
 
                 // Store additional user data in Firestore
                 await setDoc(doc(FIREBASE_DB, "users", user.uid), {
