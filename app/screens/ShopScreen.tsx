@@ -55,34 +55,16 @@ function useOrderedData (category, data) {
         //retrieve current resolution
         let curRes = docSnap.data().currentresolution;
         //derive db category name
-        const ownedCategory = "owned" + category + curRes;
+        const ownedCategory = "owned" + category;
         //container of ordered data - owned shows up first in list
         let preorderedData = docSnap.get(ownedCategory) || [];
 
         //snapshot.forEach(docsnap => {})
         //add unowned items to end of the list
         for (let item of data) {
-          //if item is not in orderedData (therefore not owned)
-          //eight bit
-          if (curRes == "eightBit" && !preorderedData.includes(item.eightBitUrl)) {
-            //add to end of orderedData
-            preorderedData = [...preorderedData, item.eightBitUrl];
-            //add to unownedItems
-            unownedData = [...unownedData, item.eightBitUrl];
-          }
-          //sixteen bit
-          else if (curRes == "sixteenBit" && !preorderedData.includes(item.sixteenBitUrl)) {
-            //add to end of orderedData
-            preorderedData = [...preorderedData, item.sixteenBitUrl];
-            //add to unownedItems
-            unownedData = [...unownedData, item.sixteenBitUrl];
-          }
-          //four bit
-          else if (curRes == "fourBit" && !preorderedData.includes(item.fourBitUrl)) {
-            //add to end of orderedData
-            preorderedData = [...preorderedData, item.fourBitUrl];
-            //add to unownedItems
-            unownedData = [...unownedData, item.fourBitUrl];
+          if (!preorderedData.includes(item.id)) {
+            preorderedData = [...preorderedData, item.id];
+            unownedData = [...unownedData, item.id];
           }
         }
         setOrderedData(preorderedData);
@@ -128,6 +110,9 @@ const ShopScreen = () => {
   //Change coins spent statistics
   const [coinSpent, setCoinSpent] = useState(0);
 
+  //Fetch resolution
+  const [resolution, setResolution] = useState("");
+
   //Fetch data from db
   useEffect(() => {
     //err catch
@@ -143,6 +128,7 @@ const ShopScreen = () => {
         setOwnedHat(docSnap.data().ownedhat || {});
         setOwnedShoes(docSnap.data().ownedshoes || {});
         setOwnedAcc(docSnap.data().ownedacc || {});
+        setResolution(docSnap.data().currentresolution || "");
 
         //set background based on time of day
         var hour = new Date().getHours();
@@ -172,19 +158,20 @@ const ShopScreen = () => {
   }, [user]);
 
   // Update equipped item in db
-  const equipItem = useCallback((category, url) => {
-    //err catch
-    if (!userDocRef) return;
+  const equipItem = useCallback((category, data, item) => {
+    //derive db category name
+    const imageUrl = resolution + "Url";
+    const resUrl = data.find(({ id }) => id === item)[imageUrl];
 
     setEquipped((prev) => {
-      const newEquipped = { ...prev, [category]: url };
+      const newEquipped = { ...prev, [category]: resUrl };
       setDoc(userDocRef, { equipped: newEquipped }, { merge: true });
       return newEquipped;
     });
-  }, [userDocRef]);
+  }, [resolution, equipped, userDocRef]);
 
   //Attempt to unlock item
-  const unlockItem = useCallback((category, url) => {
+  const unlockItem = useCallback((category, item) => {
     //err catch
     if (!userDocRef) return;
 
@@ -219,7 +206,7 @@ const ShopScreen = () => {
           if (balance < price) {
             Alert.alert("Insufficient coins!");
           } else {
-            updateOwned(category, url, price);
+            updateOwned(category, item, price);
           }
         },
       },
@@ -238,139 +225,51 @@ const ShopScreen = () => {
     
   }, [userDocRef]);
 
-  const updateOwned = useCallback((category, url, price) => {
-    //Get stats from db to update coins spent stat
-    const statsRef = doc(FIREBASE_DB, "stats", user.uid);
+  const updateOwned = useCallback((category, item, price) => {
+      //Get stats from db to update coins spent stat
+      const statsRef = doc(FIREBASE_DB, "stats", user.uid);
+      //const userDocRef = doc(FIREBASE_DB, "users", user.uid);
     
-    //8 bit
-    if (resolution == "eightBit") {
       //add unlocked item to owned items in db and set price
       switch (category) {
         case "shirt":
           setOwnedShirt((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedshirt8b: nowOwned }, { merge: true });
+            const nowOwned = [...prev, item];
+            setDoc(userDocRef, { ownedshirt: nowOwned }, { merge: true });
             return nowOwned;
           });
           break;
         case "pants":
           setOwnedPants((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedpants8b: nowOwned }, { merge: true });
+            const nowOwned = [...prev, item];
+            setDoc(userDocRef, { ownedpants: nowOwned }, { merge: true });
             return nowOwned;
           });
           break;
         case "hat":
           setOwnedHat((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedhat8b: nowOwned }, { merge: true });
+            const nowOwned = [...prev, item];
+            setDoc(userDocRef, { ownedhat: nowOwned }, { merge: true });
             return nowOwned;
           });
           break;
         case "shoes":
           setOwnedShoes((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedshoes8b: nowOwned }, { merge: true });
+            const nowOwned = [...prev, item];
+            setDoc(userDocRef, { ownedshoes: nowOwned }, { merge: true });
             return nowOwned;
           });
           break;
         case "acc":
           setOwnedAcc((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedacc8b: nowOwned }, { merge: true });
+            const nowOwned = [...prev, item];
+            setDoc(userDocRef, { ownedacc: nowOwned }, { merge: true });
             return nowOwned;
           });
           break;
         default:
           console.log("ERR: unlockItem");
       }
-    }
-    //16 bit
-    else if (resolution == "sixteenBit") {
-      //add unlocked item to owned items in db and set price
-      switch (category) {
-        case "shirt":
-          setOwnedShirt((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedshirt16b: nowOwned }, { merge: true });
-            return nowOwned;
-          });
-          break;
-        case "pants":
-          setOwnedPants((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedpants16b: nowOwned }, { merge: true });
-            return nowOwned;
-          });
-          break;
-        case "hat":
-          setOwnedHat((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedhat16b: nowOwned }, { merge: true });
-            return nowOwned;
-          });
-          break;
-        case "shoes":
-          setOwnedShoes((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedshoes16b: nowOwned }, { merge: true });
-            return nowOwned;
-          });
-          break;
-        case "acc":
-          setOwnedAcc((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedacc16b: nowOwned }, { merge: true });
-            return nowOwned;
-          });
-          break;
-        default:
-          console.log("ERR: unlockItem");
-      }
-    }
-    //4 bit default
-    else {
-      //add unlocked item to owned items in db and set price
-      switch (category) {
-        case "shirt":
-          setOwnedShirt((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedshirt4b: nowOwned }, { merge: true });
-            return nowOwned;
-          });
-          break;
-        case "pants":
-          setOwnedPants((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedpants4b: nowOwned }, { merge: true });
-            return nowOwned;
-          });
-          break;
-        case "hat":
-          setOwnedHat((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedhat4b: nowOwned }, { merge: true });
-            return nowOwned;
-          });
-          break;
-        case "shoes":
-          setOwnedShoes((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedshoes4b: nowOwned }, { merge: true });
-            return nowOwned;
-          });
-          break;
-        case "acc":
-          setOwnedAcc((prev) => {
-            const nowOwned = [...prev, url];
-            setDoc(userDocRef, { ownedacc4b: nowOwned }, { merge: true });
-            return nowOwned;
-          });
-          break;
-        default:
-          console.log("ERR: unlockItem");
-      }
-    }
 
     //change coin balance
     setBalance((prev) => {
@@ -384,7 +283,7 @@ const ShopScreen = () => {
       setDoc(statsRef, { coinsSpent: newStat }, { merge: true });
       return newStat;
     });
-    return [];
+    return () => unsubscribe(); // Cleanup the listener on component unmount;
   }, [userDocRef]);
 
   //Tab menu flatlist base - sent data to display
@@ -392,6 +291,8 @@ const ShopScreen = () => {
   const ShopMenu: React.FC<ShopMenuProps> = memo(({ category, equipItem, unlockItem, data = [] }) => {
     //Reordering data and figuring out which ones are new
     const [orderedData, unownedItems] = useOrderedData(category, data);
+    //Set url
+    const imageUrl = resolution + "Url";
 
     return (
       //render flatlist
@@ -399,15 +300,14 @@ const ShopScreen = () => {
         style={[styles.flatListContainer, { backgroundColor: colors.primarySoft }]}
         numColumns={numColumns}
         data={orderedData}
-        keyExtractor={(item, index) => item.id?.toString() || index.toString()}
         renderItem={({ item }) => (
           <View style={[styles.flatListContainer, { backgroundColor: colors.primarySoft }]}>
             <Pressable
               style={({ pressed }) => ({
               backgroundColor: pressed ? colors.emphasis : colors.primarySoft,
               })}
-              onPress={() => unownedItems.includes(item) ? unlockItem(category, item) : equipItem(category, item)}>
-              <ImageBackground source={{ uri: item }} style={styles.blockedThumbnails}>
+              onPress={() => unownedItems.includes(item) ? unlockItem(category, item) : equipItem(category, data, item)}>
+              <ImageBackground source={{ uri: data.find(({ id }) => id === item)[imageUrl] }} style={styles.blockedThumbnails}>
                 {unownedItems.includes(item) && (<Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/blocked_item.png?alt=media&token=eb83ac1f-cff7-48de-81d6-8aed6f168850" }}
                   resizeMode="cover" style={styles.thumbnails} />)}
               </ImageBackground>
