@@ -111,6 +111,7 @@ const OpeningScreen = ({navigation}) => {
                     acc: "null",
                   },
                     currentresolution: "fourBit",
+                    unlockedResolutions: ["fourBit"],
                     pfp: "",
                     username: username || "NewUser",
                     xp: 0

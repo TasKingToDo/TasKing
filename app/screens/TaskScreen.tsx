@@ -315,24 +315,21 @@ const TaskScreen = () => {
             const startOfWeek = new Date(now);
             startOfWeek.setDate(now.getDate() - now.getDay());
             startOfWeek.setHours(0, 0, 0, 0);
-    
+
             const lastCompleted = statsData.lastTaskCompletedDate ? new Date(statsData.lastTaskCompletedDate) : null;
             const completedThisWeek = lastCompleted && lastCompleted >= startOfWeek;
-    
+
             updates.tasksCompletedThisWeek = completedThisWeek ? increment(1) : 1;
-    
-            const lastLogin = statsData.lastLoginDate;
-            const lastDate = lastLogin ? new Date(lastLogin) : null;
-            const lastDateStr = lastDate?.toISOString().split("T")[0] ?? null;
-    
-            if (lastDateStr !== todayStr) {
-                updates.lastLoginDate = todayStr;
-        
+
+            const lastCompletedStr = lastCompleted?.toISOString().split("T")[0] ?? null;
+
+            if (lastCompletedStr !== todayStr) {
                 const yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
-                const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-                const isYesterday = lastDateStr === yesterdayStr;
-    
+                const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+                const isYesterday = lastCompletedStr === yesterdayStr;
+
                 if (isYesterday) {
                     const nextStreak = (statsData.currentStreak || 0) + 1;
                     updates.currentStreak = nextStreak;
@@ -345,6 +342,8 @@ const TaskScreen = () => {
                         updates.longestStreak = 1;
                     }
                 }
+
+                updates.lastTaskCompletedDate = now.toISOString(); // ✅ move this line here
             }
     
             await updateDoc(statsRef, updates);
@@ -585,18 +584,19 @@ const TaskScreen = () => {
                                         ]}>
                                             {/* Task Name, Edit Button, and Notif Bell */}
                                             <View style={styles.headerRow}>
-                                                <Text style={[styles.taskTitle, { color: colors.black }]}>
+                                                <Text style={[styles.taskTitle, { color: colors.black }]} numberOfLines={1} ellipsizeMode='tail'>
                                                     {item.name} {item.completed ? "✅" : ""}
                                                 </Text>
-                                                {canEditTask(item) && (
-                                                    <TouchableOpacity style={{left: 130}} onPress={() => navigation.navigate("Create Task", { taskId: item.id })}>
-                                                        <Icon name="edit" size={20} color={colors.grey} />
+                                                <View style={styles.iconRow}>
+                                                    {canEditTask(item) && (
+                                                        <TouchableOpacity onPress={() => navigation.navigate("Create Task", { taskId: item.id })} style={styles.iconButton}>
+                                                            <Icon name="edit" size={20} color={colors.grey} />
+                                                        </TouchableOpacity>
+                                                    )}
+                                                    <TouchableOpacity onPress={() => handleNotificationPress(item.id)} style={styles.iconButton}>
+                                                        <Icon name="bell" size={20} color={item.notificationPreset ? 'orange' : 'gray'} />
                                                     </TouchableOpacity>
-                                                )}
-                                                <TouchableOpacity onPress={() => handleNotificationPress(item.id)}>
-                                                    <Icon name="bell" size={20} color={item.notificationPreset ? 'orange' : 'gray'} />
-                                                </TouchableOpacity>
-                                            
+                                                </View>
                                             </View>
 
                                             {/* Date and Time */}
@@ -702,6 +702,13 @@ const styles = StyleSheet.create({
         fontSize: 18, 
         fontWeight: 'bold' 
     },
+    iconButton: {
+        marginLeft: 8,
+    },
+    iconRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     noTasksText: {
         textAlign: 'center',
         marginTop: 20,
@@ -750,6 +757,7 @@ const styles = StyleSheet.create({
     taskTitle: {
         fontSize: 18,
         fontWeight: "bold",
+        maxWidth: '85%',
     },
     modalContainer: {
         flex: 1,

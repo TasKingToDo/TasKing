@@ -5,8 +5,8 @@ import Popover from 'react-native-popover-view';
 import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { useNavigation } from 'expo-router';
 
-import { themes } from '../config/colors';
-import useTheme from '../config/useTheme';
+import { themes } from './colors';
+import useTheme from './useTheme';
 import { SettingsContext } from './SettingsContext';
 import { authContext } from './authContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
@@ -39,6 +39,7 @@ const CustomMenu = ({navbarVisible}) => {
                 const data = docSnap.data();
                 setBalance(data.balance || 0);
                 setCurrentResolution(data.currentresolution || "fourBit");
+                setUnlockedResolutions(data.unlockedResolutions || ["fourBit"]);
             } else {
                 console.log("No such user document!");
             }
@@ -103,7 +104,8 @@ const CustomMenu = ({navbarVisible}) => {
         const userRef = doc(FIREBASE_DB, "users", user.uid);
         await updateDoc(userRef, { 
             balance: newBalance,
-            currentresolution: resolution 
+            currentresolution: resolution,
+            unlockedResolutions: [...unlockedResolutions, resolution]
         });
     };       
 
@@ -202,7 +204,7 @@ const CustomMenu = ({navbarVisible}) => {
                             style={[styles.resolutionButton, currentResolution === "fourBit" && [styles.selectedResolution, { borderColor: colors.primary }]]} 
                             onPress={() => handleResolutionSelect("fourBit")}
                         >
-                            <Text style={styles.resolutionText}>fourBit</Text>
+                            <Text style={styles.resolutionText}>4-bit</Text>
                         </Pressable>
 
                         {/* eightBit Resolution */}
@@ -216,7 +218,7 @@ const CustomMenu = ({navbarVisible}) => {
                             disabled={!unlockedResolutions.includes("eightBit") && (progress < 100 || balance < 100)}
                         >
                             <Text style={styles.resolutionText}>
-                                eightBit {unlockedResolutions.includes("eightBit") ? "" : `(Progress: ${progress}/100, Cost: 100)`}
+                                8-bit {unlockedResolutions.includes("eightBit") ? "" : `(Progress: ${progress}/100, Cost: 100)`}
                             </Text>
                         </Pressable>
 
@@ -231,7 +233,7 @@ const CustomMenu = ({navbarVisible}) => {
                             disabled={!unlockedResolutions.includes("sixteenBit") && (progress < 400 || balance < 250)}
                         >
                             <Text style={styles.resolutionText}>
-                                sixteenBit {unlockedResolutions.includes("sixteenBit") ? "" : `(Progress: ${progress}/400, Cost: 250)`}
+                                16-bit {unlockedResolutions.includes("sixteenBit") ? "" : `(Progress: ${progress}/400, Cost: 250)`}
                             </Text>
                         </Pressable>
 
