@@ -32,6 +32,14 @@ type ShopMenuProps = {
   data: { id: number; fourBitUrl: string; eightBitUrl: string; sixteenBitUrl: string; }[];
 };
 
+//url of currently equipped items, to be derived later
+let equippedBody;
+let equippedShirt;
+let equippedPants;
+let equippedHat;
+let equippedShoes;
+let equippedAcc;
+
 //reorder data such that FlatList will display owned items before unowned
 function useOrderedData (category, data) {
   //Fetch user id
@@ -52,8 +60,6 @@ function useOrderedData (category, data) {
       if (docSnap.exists()) {
         //container of unowned items
         let unownedData = [];
-        //retrieve current resolution
-        let curRes = docSnap.data().currentresolution;
         //derive db category name
         const ownedCategory = "owned" + category;
         //container of ordered data - owned shows up first in list
@@ -158,17 +164,14 @@ const ShopScreen = () => {
   }, [user]);
 
   // Update equipped item in db
-  const equipItem = useCallback((category, data, item) => {
-    //derive db category name
-    const imageUrl = resolution + "Url";
-    const resUrl = data.find(({ id }) => id === item)[imageUrl];
+  const equipItem = useCallback((category, item) => {
 
     setEquipped((prev) => {
-      const newEquipped = { ...prev, [category]: resUrl };
+      const newEquipped = { ...prev, [category]: item };
       setDoc(userDocRef, { equipped: newEquipped }, { merge: true });
       return newEquipped;
     });
-  }, [resolution, equipped, userDocRef]);
+  }, [resolution, equipped]);
 
   //Attempt to unlock item
   const unlockItem = useCallback((category, item) => {
@@ -293,6 +296,13 @@ const ShopScreen = () => {
     const [orderedData, unownedItems] = useOrderedData(category, data);
     //Set url
     const imageUrl = resolution + "Url";
+    //Get equipped items
+    equippedBody = bodyData.find(({ id }) => id === equipped.body)[imageUrl];
+    equippedShirt = shirtData.find(({ id }) => id === equipped.shirt)[imageUrl];
+    equippedPants = pantsData.find(({ id }) => id === equipped.pants)[imageUrl];
+    equippedHat = hatData.find(({ id }) => id === equipped.hat)[imageUrl];
+    equippedShoes = shoesData.find(({ id }) => id === equipped.shoes)[imageUrl];
+    equippedAcc = accData.find(({ id }) => id === equipped.acc)[imageUrl];
 
     return (
       //render flatlist
@@ -306,7 +316,7 @@ const ShopScreen = () => {
               style={({ pressed }) => ({
               backgroundColor: pressed ? colors.emphasis : colors.primarySoft,
               })}
-              onPress={() => unownedItems.includes(item) ? unlockItem(category, item) : equipItem(category, data, item)}>
+              onPress={() => unownedItems.includes(item) ? unlockItem(category, item) : equipItem(category, item)}>
               <ImageBackground source={{ uri: data.find(({ id }) => id === item)[imageUrl] }} style={styles.blockedThumbnails}>
                 {unownedItems.includes(item) && (<Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/blocked_item.png?alt=media&token=eb83ac1f-cff7-48de-81d6-8aed6f168850" }}
                   resizeMode="cover" style={styles.thumbnails} />)}
@@ -324,12 +334,12 @@ const ShopScreen = () => {
         {/* Top half of screen (display of the character) */}
         <View style={styles.imageContainer}>
           <Image source={{ uri: bg }} style={styles.bgImage} />
-          <Image source={{ uri: equipped.body }} style={styles.image} />
-          <Image source={{ uri: equipped.shoes }} style={styles.image} />
-          <Image source={{ uri: equipped.shirt }} style={styles.image} />
-          <Image source={{ uri: equipped.pants }} style={styles.image} />
-          <Image source={{ uri: equipped.hat }} style={styles.hatImage} />
-          <Image source={{ uri: equipped.acc }} style={styles.image} />
+          <Image source={{ uri: equippedBody }} style={styles.image} />
+          <Image source={{ uri: equippedShoes }} style={styles.image} />
+          <Image source={{ uri: equippedShirt }} style={styles.image} />
+          <Image source={{ uri: equippedPants }} style={styles.image} />
+          <Image source={{ uri: equippedHat }} style={styles.hatImage} />
+          <Image source={{ uri: equippedAcc }} style={styles.image} />
         </View>
         <View style={[styles.coinCountContainer, { backgroundColor: colors.secondary }]}>
           <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/coin.png?alt=media&token=e0a45910-fae9-4c15-a462-19154f025f64" }} style={styles.coinImage} />
@@ -425,8 +435,8 @@ const styles = StyleSheet.create({
     objectFit: 'fill',
     position: 'absolute',
     paddingTop: 20,
-    top: -100,
-    left: 74,
+    top: -98,
+    left: 67,
   },
   coinImage: {
     width: 21,
