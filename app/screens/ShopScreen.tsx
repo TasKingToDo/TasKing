@@ -333,7 +333,7 @@ const ShopScreen = () => {
         </View>
         <View style={[styles.coinCountContainer, { backgroundColor: colors.secondary }]}>
           <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/tasking-c1d66.firebasestorage.app/o/coin.png?alt=media&token=e0a45910-fae9-4c15-a462-19154f025f64" }} style={styles.coinImage} />
-          <Text style={[styles.coinText, { color: colors.black }]}>{balance}</Text>
+          <Text style={[styles.coinText, { color: themes.light.white }]}>{balance}</Text>
         </View>
         {/* Bottom half of screen (display of shop tab menu) */}
         <View style={[styles.shopContainer, { backgroundColor: colors.primarySoft }]}>

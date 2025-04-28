@@ -7,6 +7,7 @@ import { Picker } from '@react-native-picker/picker';
 import Slider from '@react-native-community/slider';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { themes } from '../config/colors';
 import useTheme from '../config/useTheme';
@@ -30,10 +31,10 @@ const CreateTaskScreen = ({navigation}) => {
     const { user } = useContext(authContext);
     const colors = useTheme();
     const [name, setName] = useState('');
-    const [date, setDate] = useState('');
-    const [dateError, setDateError] = useState('');
-    const [time, setTime] = useState('');
-    const [timeError, setTimeError] = useState('');
+    const [date, setDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [time, setTime] = useState(new Date());
+    const [showTimePicker, setShowTimePicker] = useState(false);
     const [repeat, setRepeat] = useState('none');
     const [customRepeatValue, setCustomRepeatValue] = useState('1');
     const [customRepeatType, setCustomRepeatType] = useState('days');
@@ -48,7 +49,24 @@ const CreateTaskScreen = ({navigation}) => {
     const route = useRoute();
     const { taskId } = route.params || {};
 
-
+    const parseTimeStringToDate = (timeStr: string): Date => {
+        try {
+          const [timeString, modifier] = timeStr.trim().split(' ');
+          if (!timeString || !modifier) return new Date();
+      
+          let [hours, minutes] = timeString.split(':').map(Number);
+      
+          if (modifier === 'PM' && hours !== 12) hours += 12;
+          if (modifier === 'AM' && hours === 12) hours = 0;
+      
+          const dateString = `1970-01-01T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+          const parsed = new Date(dateString);
+          if (isNaN(parsed.getTime())) return new Date();
+          return parsed;
+        } catch {
+          return new Date();
+        }
+    };      
 
     useEffect(() => {
         const fetchFriends = async () => {
@@ -86,62 +104,39 @@ const CreateTaskScreen = ({navigation}) => {
           if (taskDoc.exists()) {
             const data = taskDoc.data();
             setName(data.name);
-            setDate(data.date);
-            setTime(data.time);
-            setSubtasks(data.subtask || []);
-            setRepeatData(data.repeat);
-            setSelectedDifficulty({
-              label: data.difficulty,
-              xp: data.xp,
-              balance: data.balance,
-            });
+            setDate(new Date(data.date));
+    
+            if (data.time) {
+              setTime(parseTimeStringToDate(data.time));
+            } else {
+              setTime(new Date()); // fallback only if time is missing
+            }
+    
+            setSubtasks(
+                Array.isArray(data.subtask) 
+                  ? data.subtask.map((sub: any) => ({
+                      text: sub.text || '',
+                      editable: sub.editable ?? false,
+                      completed: sub.completed ?? false,
+                  }))
+                  : []
+            );              
+            setRepeat(data.repeat || 'none');
+            if (typeof data.repeat === 'object') {
+                setRepeat('custom');
+                setCustomRepeatType(data.repeat.type || 'days');
+                setCustomRepeatValue(data.repeat.interval?.toString() || '1');
+            }            
+            const difficultyIdx = difficultyLevels.findIndex(level => level.label === data.difficulty);
+            setDifficultyIndex(difficultyIdx !== -1 ? difficultyIdx : 2); // Default to "Normal" if not found
             setSelectedCollaborator(data.collaboratorId || null);
             setCollaboratorPermission(data.collaboratorPermission || 'complete');
           }
         };
         fetchTask();
-      }, [taskId]);      
+    }, [taskId]);      
 
     if (!settings || !user) return null;
-
-    // Handle Date and Time formatting
-    const handleDateChange = (text: string) => {
-        let cleanedText = text.replace(/[^0-9-]/g, '');
-        if (text.length < date.length) {
-            setDate(text);
-        } else {
-            if (cleanedText.length === 4 || cleanedText.length === 7) {
-                cleanedText += '-';
-            }
-            setDate(cleanedText);
-        }
-        if (/^\d{4}-\d{2}-\d{2}$/.test(cleanedText)) {
-            setDateError('');
-        } else {
-            setDateError('Date must be in YYYY-MM-DD format');
-        }
-    };
-
-    const handleTimeChange = (text: string) => {
-        let cleanedText = text.replace(/[^0-9:APM ]/gi, '');
-        if (text.length < time.length) {
-            setTime(text);
-        } else {
-            if (cleanedText.length === 2 && !cleanedText.includes(':')) {
-                cleanedText += ':';
-            }
-            if (cleanedText.length === 5 && !cleanedText.includes(' ')) {
-                cleanedText += ' ';
-            }
-            cleanedText = cleanedText.toUpperCase();
-            setTime(cleanedText);
-        }
-        if (/^(0[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/.test(cleanedText)) {
-            setTimeError('');
-        } else {
-            setTimeError('Time must be in HH:MM AM/PM format');
-        }
-    };
 
     // Saving a Task
     const handleSaveTask = async () => {
@@ -152,44 +147,50 @@ const CreateTaskScreen = ({navigation}) => {
     
             const selectedDifficulty = difficultyLevels[difficultyIndex];
     
-            // Save the task to Firestore
+            const hours = time.getHours();
+            const minutes = time.getMinutes();
+            const formattedHours = ((hours + 11) % 12 + 1);
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const formattedTime = `${formattedHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    
+            const taskData = {
+                userId: user.uid,
+                name,
+                date: date.toISOString().split('T')[0],
+                time: formattedTime,
+                subtask: subtasks,
+                repeat: repeatData,
+                xp: selectedDifficulty.xp,
+                balance: selectedDifficulty.balance,
+                difficulty: selectedDifficulty.label,
+                collaboratorId: selectedCollaborator,
+                collaboratorPermission,
+            };
+    
             if (taskId) {
-                await updateDoc(doc(FIREBASE_DB, "tasks", taskId), {
-                    name, date, time, subtask: subtasks, repeat: repeatData,
-                    xp: selectedDifficulty.xp,
-                    balance: selectedDifficulty.balance,
-                    difficulty: selectedDifficulty.label,
-                    collaboratorId: selectedCollaborator,
-                    collaboratorPermission,
-                });
+                await updateDoc(doc(FIREBASE_DB, "tasks", taskId), taskData);
             } else {
                 await addDoc(collection(FIREBASE_DB, "tasks"), {
-                    userId: user.uid,
-                    name, date, time, subtask: subtasks, repeat: repeatData,
-                    createdAt: new Date().toISOString(),
-                    xp: selectedDifficulty.xp,
-                    balance: selectedDifficulty.balance,
-                    difficulty: selectedDifficulty.label,
-                    collaboratorId: selectedCollaborator,
-                    collaboratorPermission,
+                    ...taskData,
+                    createdAt: new Date().toISOString(),  // Only add createdAt for brand-new tasks
                 });
-            }             
     
-            // Increment tasksCreated in stats
-            const statsRef = doc(FIREBASE_DB, "stats", user.uid);
-            const statsSnap = await getDoc(statsRef);
-            if (statsSnap.exists()) {
-                await updateDoc(statsRef, {
-                    tasksCreated: increment(1),
-                });
+                // Update stats only for new tasks
+                const statsRef = doc(FIREBASE_DB, "stats", user.uid);
+                const statsSnap = await getDoc(statsRef);
+                if (statsSnap.exists()) {
+                    await updateDoc(statsRef, {
+                        tasksCreated: increment(1),
+                    });
+                }
             }
     
             navigation.navigate('Home');
         } catch (error) {
-            console.error("Error adding document: ", error);
+            console.error("Error saving task: ", error);
             alert("Failed to save task.");
         }
-    };
+    };     
 
     // Subtask
     const handleAddSubtaskManually = () => {
@@ -204,7 +205,7 @@ const CreateTaskScreen = ({navigation}) => {
         }
     
         try {
-            const API_KEY = "API_KEY_STRING_GOES_HERE";
+            const API_KEY = "AIzaSyCUc53d2u7oETlQceWvqwPNgPSAXcYtp9c";
             const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
             const prompt = `Please generate a sensible number of subtasks, less than or equal to 10, with no formatting (like markdown and others); for the main task: ${name}`;
     
@@ -299,25 +300,53 @@ const CreateTaskScreen = ({navigation}) => {
                                         autoCapitalize="none"
                                     />
                                     <View style={styles.row}>
-                                        <TextInput 
-                                            style={[styles.textInput, {borderColor: colors.black, color: colors.black, alignSelf: 'stretch'}]}
-                                            value={date}
-                                            onChangeText={handleDateChange}
-                                            placeholder="YYYY-MM-DD"
-                                            placeholderTextColor={colors.black}
-                                            keyboardType="numeric"
-                                            maxLength={10}
-                                        />
-                                        <TextInput
-                                            style={[styles.textInput, {borderColor: colors.black, color: colors.black, alignSelf: 'stretch'}]}
-                                            value={time}
-                                            onChangeText={handleTimeChange}
-                                            placeholder="HH:MM AM/PM"
-                                            placeholderTextColor={colors.black}
-                                            keyboardType="default"
-                                            maxLength={8}
-                                        />
+                                        <Pressable 
+                                            onPress={() => setShowDatePicker(true)} 
+                                            style={[styles.textInput, { borderColor: colors.black, justifyContent: 'center' }]}
+                                        >
+                                            <Text style={{ color: colors.black }}>
+                                                {date.toISOString().split('T')[0]} {/* Shows YYYY-MM-DD */}
+                                            </Text>
+                                        </Pressable>
+
+                                        <Pressable 
+                                            onPress={() => setShowTimePicker(true)} 
+                                            style={[styles.textInput, { borderColor: colors.black, justifyContent: 'center' }]}
+                                        >
+                                            <Text style={{ color: colors.black }}>
+                                                {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                            </Text>
+                                        </Pressable>
                                     </View>
+
+                                    {showDatePicker && (
+                                    <DateTimePicker
+                                        value={date}
+                                        mode="date"
+                                        display="default"
+                                        onChange={(event, selectedDate) => {
+                                        setShowDatePicker(false);
+                                        if (selectedDate) {
+                                            setDate(selectedDate);
+                                        }
+                                        }}
+                                    />
+                                    )}
+
+                                    {showTimePicker && (
+                                    <DateTimePicker
+                                        value={time}
+                                        mode="time"
+                                        is24Hour={false}
+                                        display="default"
+                                        onChange={(event, selectedTime) => {
+                                        setShowTimePicker(false);
+                                        if (selectedTime) {
+                                            setTime(selectedTime);
+                                        }
+                                        }}
+                                    />
+                                    )}
                                 </View>
 
                                 {/* Repeat Select */}
