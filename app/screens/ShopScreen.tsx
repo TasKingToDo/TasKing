@@ -355,13 +355,35 @@ const ShopScreen = () => {
                   tabBarActiveTintColor: colors.black,
                   tabBarInactiveTintColor: colors.white,
                 }}>
-                <Tab.Screen name="🧍" children={() => <ShopMenu category="body" equipItem={equipItem} unlockItem={unlockItem} data={bodyData} />} />
-                <Tab.Screen name="👕" children={() => <ShopMenu category="shirt" equipItem={equipItem} unlockItem={unlockItem} data={shirtData} />} />
-                <Tab.Screen name="👖" children={() => <ShopMenu category="pants" equipItem={equipItem} unlockItem={unlockItem} data={pantsData} />} />
-                <Tab.Screen name="👑" children={() => <ShopMenu category="hat" equipItem={equipItem} unlockItem={unlockItem} data={hatData} />} />
-                <Tab.Screen name="👟" children={() => <ShopMenu category="shoes" equipItem={equipItem} unlockItem={unlockItem} data={shoesData} />} />
-                <Tab.Screen name="🌹" children={() => <ShopMenu category="acc" equipItem={equipItem} unlockItem={unlockItem} data={accData} />} />
-                
+                <Tab.Screen name="🧍" options={{
+                  tabBarIcon: () => (<Image source={{ uri: bodyData[1].fourBitUrl }} style={styles.flatListIcons} />), tabBarLabel: () => null, }}
+                  children={() => <ShopMenu category="body" equipItem={equipItem} unlockItem={unlockItem} data={bodyData} />}
+                />
+                <Tab.Screen name="👕" options={{
+                  tabBarIcon: () => (<Image source={{ uri: shirtData[2].fourBitUrl }} style={styles.flatListIcons} />), tabBarLabel: () => null,
+                }}
+                  children={() => <ShopMenu category="shirt" equipItem={equipItem} unlockItem={unlockItem} data={shirtData} />}
+                />
+                <Tab.Screen name="👖" options={{
+                  tabBarIcon: () => (<Image source={{ uri: pantsData[4].fourBitUrl }} style={styles.flatListIcons} />), tabBarLabel: () => null,
+                }}
+                  children={() => <ShopMenu category="pants" equipItem={equipItem} unlockItem={unlockItem} data={pantsData} />}
+                />
+                <Tab.Screen name="👑" options={{
+                  tabBarIcon: () => (<Image source={{ uri: hatData[3].fourBitUrl }} style={styles.flatListIcons} />), tabBarLabel: () => null,
+                }}
+                  children={() => <ShopMenu category="hat" equipItem={equipItem} unlockItem={unlockItem} data={hatData} />}
+                />
+                <Tab.Screen name="👟" options={{
+                  tabBarIcon: () => (<Image source={{ uri: shoesData[2].fourBitUrl }} style={styles.flatListIcons} />), tabBarLabel: () => null,
+                }}
+                  children={() => <ShopMenu category="shoes" equipItem={equipItem} unlockItem={unlockItem} data={shoesData} />}
+                />
+                <Tab.Screen name="🌹" options={{
+                  tabBarIcon: () => (<Image source={{ uri: accData[3].fourBitUrl }} style={styles.flatListIcons} />), tabBarLabel: () => null,
+                }}
+                  children={() => <ShopMenu category="acc" equipItem={equipItem} unlockItem={unlockItem} data={accData} />}
+                />
               </Tab.Navigator>
             </NavigationContainer>
           </NavigationIndependentTree>
@@ -387,6 +409,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
     paddingBottom: 8,
     borderRadius: 10,
+  },
+  flatListIcons: {
+    width: 30,
+    height: 30,
   },
   imageContainer: {
     justifyContent: 'center',
