@@ -8,7 +8,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import OpeningScreen from "./screens/OpeningScreen";
 import ShopScreen from "./screens/ShopScreen";
 import HomeScreen from "./screens/HomeScreen";
-import TaskScreen from "./screens/TaskScreen";
 import FriendsScreen from "./screens/FriendsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import StatisticsScreen from "./screens/StatisticsScreen";
@@ -36,7 +35,6 @@ const RootNavigator = () => {
             <>
               <Stack.Screen name="Home" component={HomeScreen} />
               <Stack.Screen name="Shop" component={ShopScreen} />
-              <Stack.Screen name="Tasks" component={TaskScreen} />
               <Stack.Screen name="Create Task" component={CreateTaskScreen} />
               <Stack.Screen name="Friends" component={FriendsScreen} />
               <Stack.Screen name="Stats" component={StatisticsScreen} />

@@ -11,7 +11,7 @@ import { SettingsContext } from './SettingsContext';
 import { authContext } from './authContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
 
-const CustomMenu = ({navbarVisible}) => {
+const CustomMenu = () => {
     const [showPopover, setShowPopover] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
 
@@ -138,12 +138,6 @@ const CustomMenu = ({navbarVisible}) => {
     const settings = useContext(SettingsContext);
     
     if (!settings) return null;
-
-    useEffect(() => {
-        if (!navbarVisible) {
-            setShowPopover(false);
-        }
-    }, [navbarVisible]);
 
     return (
         <View style={styles.container}>
