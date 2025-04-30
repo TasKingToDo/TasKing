@@ -7,8 +7,8 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth, on
 import { KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, } from 'react-native';
 import { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import Animated from 'react-native-reanimated';
-import {themes} from '../config/colors';
-import { SettingsContext } from '../config/SettingsContext';
+import {themes} from '@/config/colors';
+import { SettingsContext } from '@/config/SettingsContext';
 import bodyData from '../assets/shopdata/bodyData';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 
@@ -112,7 +112,6 @@ const OpeningScreen = ({navigation}) => {
                   },
                     currentresolution: "fourBit",
                     unlockedResolutions: ["fourBit"],
-                    pfp: "",
                     username: username || "NewUser",
                     xp: 0
                 });

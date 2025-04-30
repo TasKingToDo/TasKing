@@ -8,14 +8,6 @@ const lightColors = {
   grey: "#808080",
   accept: "#4ecd24",
   decline: "#fc5c65",
-  background: "#E7F0F1",
-  text: "#262C29",                
-  inputBackground: "#fff",        
-  inputBorder: "#262C29",         
-  placeholder: "#808080",
-  card: "#fff",             
-  cardHeader: "#C4D7D8",    
-  cardBorder: "#C4D7D8", 
 };
 
 const darkColors = {
@@ -28,14 +20,6 @@ const darkColors = {
   grey: "#a0a0a0",
   accept: "#6fdc4f",
   decline: "#ff6b75",
-  background: "#1b1f1d",
-  text: "#f0f4f3",                
-  inputBackground: "#232323",     
-  inputBorder: "#f0f4f3",         
-  placeholder: "#a0a0a0",
-  card: "#232323",          
-  cardHeader: "#3a4f51",    
-  cardBorder: "#3a4f51",
 };
 
 export const themes = {

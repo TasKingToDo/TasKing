@@ -8,11 +8,11 @@ import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 //npm install react-native-tab-view
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
-import { themes } from '../config/colors';
-import useTheme from '../config/useTheme';
-import { SettingsContext } from '../config/SettingsContext';
+import { themes } from '@/config/colors';
+import useTheme from '@/config/useTheme';
+import { SettingsContext } from '@/config/SettingsContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
-import { authContext } from '../config/authContext';
+import { authContext } from '@/config/authContext';
 import bodyData from "../assets/shopdata/bodyData";
 import shirtData from "../assets/shopdata/shirtData";
 import pantsData from "../assets/shopdata/pantsData";
@@ -297,12 +297,23 @@ const ShopScreen = () => {
     //Set url
     const imageUrl = resolution + "Url";
     //Get equipped items
-    // equippedBody = bodyData.find(({ id }) => id === equipped.body)[imageUrl];
-    // equippedShirt = shirtData.find(({ id }) => id === equipped.shirt)[imageUrl];
-    // equippedPants = pantsData.find(({ id }) => id === equipped.pants)[imageUrl];
-    // equippedHat = hatData.find(({ id }) => id === equipped.hat)[imageUrl];
-    // equippedShoes = shoesData.find(({ id }) => id === equipped.shoes)[imageUrl];
-    // equippedAcc = accData.find(({ id }) => id === equipped.acc)[imageUrl];
+    const bodyItem = bodyData.find(({ id }) => id === equipped.body);
+    equippedBody = bodyItem ? bodyItem[imageUrl] : null;
+
+    const shirtItem = shirtData.find(({ id }) => id === equipped.shirt);
+    equippedShirt = shirtItem ? shirtItem[imageUrl] : null;
+
+    const pantsItem = pantsData.find(({ id }) => id === equipped.pants);
+    equippedPants = pantsItem ? pantsItem[imageUrl] : null;
+
+    const hatItem = hatData.find(({ id }) => id === equipped.hat);
+    equippedHat = hatItem ? hatItem[imageUrl] : null;
+
+    const shoesItem = shoesData.find(({ id }) => id === equipped.shoes);
+    equippedShoes = shoesItem ? shoesItem[imageUrl] : null;
+
+    const accItem = accData.find(({ id }) => id === equipped.acc);
+    equippedAcc = accItem ? accItem[imageUrl] : null;
 
     return (
       //render flatlist

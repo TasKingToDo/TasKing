@@ -6,8 +6,8 @@ import {
 import { getAuth, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential, deleteUser } from 'firebase/auth';
 import { getFirestore, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-import { SettingsContext } from '../config/SettingsContext';
-import useTheme from '../config/useTheme';
+import { SettingsContext } from '@/config/SettingsContext';
+import useTheme from '@/config/useTheme';
 
 const SettingsScreen = ({ navigation }) => {
   const settings = useContext(SettingsContext);
@@ -221,19 +221,19 @@ const SettingsScreen = ({ navigation }) => {
 
             <View style={[
                 styles.accountMenuContainer,
-                { backgroundColor: colors.card, borderColor: colors.cardBorder, borderWidth: 1 }
+                { backgroundColor: colors.white, borderColor: colors.primarySoft, borderWidth: 1 }
               ]}>
                 <TouchableOpacity
                   style={[
                     styles.accountMenuButton,
-                    { backgroundColor: colors.cardHeader }
+                    { backgroundColor: colors.primarySoft }
                   ]}
                   onPress={() => setShowAccount(!showAccount)}
                 >
-                  <Text style={[styles.accountMenuText, { color: colors.text }]}>
+                  <Text style={[styles.accountMenuText, { color: colors.black }]}>
                     Account Settings
                   </Text>
-                  <Text style={{ fontSize: 18, color: colors.text }}>
+                  <Text style={{ fontSize: 18, color: colors.black }}>
                     {showAccount ? '▲' : '▼'}
                   </Text>
                 </TouchableOpacity>
@@ -241,18 +241,18 @@ const SettingsScreen = ({ navigation }) => {
               {showAccount && (
                 <View>
                   <View style={styles.changeContainer}>
-                    <Text style={[styles.changeText, { color: colors.text }]}>Change Username</Text>
+                    <Text style={[styles.changeText, { color: colors.black }]}>Change Username</Text>
                     <TextInput
                       style={[
                         styles.input,
                         {
-                          color: colors.text,
-                          borderColor: colors.inputBorder,
-                          backgroundColor: colors.inputBackground || 'transparent',
+                          color: colors.black,
+                          borderColor: colors.black,
+                          backgroundColor: colors.white || 'transparent',
                         },
                       ]}
                       placeholder="New Username"
-                      placeholderTextColor={colors.placeholder || colors.text + '99'}
+                      placeholderTextColor={colors.grey || colors.black + '99'}
                       value={newUsername}
                       onChangeText={setNewUsername}
                       editable={!loadingUsername}
@@ -262,13 +262,13 @@ const SettingsScreen = ({ navigation }) => {
                       style={[
                         styles.input,
                         {
-                          color: colors.text,
-                          borderColor: colors.inputBorder,
-                          backgroundColor: colors.inputBackground || 'transparent',
+                          color: colors.black,
+                          borderColor: colors.black,
+                          backgroundColor: colors.white || 'transparent',
                         },
                       ]}
                       placeholder="New Password"
-                      placeholderTextColor={colors.placeholder || colors.text + '99'}
+                      placeholderTextColor={colors.grey || colors.black + '99'}
                       value={usernameCurrentPassword}
                       onChangeText={setUsernameCurrentPassword}
                       secureTextEntry
@@ -289,18 +289,18 @@ const SettingsScreen = ({ navigation }) => {
                   </View>
 
                   <View style={styles.changeContainer}>
-                    <Text style={[styles.changeText, { color: colors.text }]}>Change Password</Text>
+                    <Text style={[styles.changeText, { color: colors.black }]}>Change Password</Text>
                     <TextInput
                       style={[
                         styles.input,
                         {
-                          color: colors.text,
-                          borderColor: colors.inputBorder,
-                          backgroundColor: colors.inputBackground || 'transparent',
+                          color: colors.black,
+                          borderColor: colors.black,
+                          backgroundColor: colors.white || 'transparent',
                         },
                       ]}
                       placeholder="Current Password"
-                      placeholderTextColor={colors.placeholder || colors.text + '99'}
+                      placeholderTextColor={colors.grey || colors.black + '99'}
                       value={currentPassword}
                       onChangeText={setCurrentPassword}
                       secureTextEntry
@@ -310,13 +310,13 @@ const SettingsScreen = ({ navigation }) => {
                       style={[
                         styles.input,
                         {
-                          color: colors.text,
-                          borderColor: colors.inputBorder,
-                          backgroundColor: colors.inputBackground || 'transparent',
+                          color: colors.black,
+                          borderColor: colors.black,
+                          backgroundColor: colors.white || 'transparent',
                         },
                       ]}
                       placeholder="New Password"
-                      placeholderTextColor={colors.placeholder || colors.text + '99'}
+                      placeholderTextColor={colors.grey || colors.black + '99'}
                       value={newPassword}
                       onChangeText={setNewPassword}
                       secureTextEntry
@@ -354,21 +354,21 @@ const SettingsScreen = ({ navigation }) => {
 
                     {deleteMode && (
                       <View style={{ width: 260, marginTop: 6, alignItems: 'center' }}>
-                        <Text style={{ color: colors.text, marginBottom: 8, textAlign: 'center', fontWeight: 'bold' }}>
+                        <Text style={{ color: colors.black, marginBottom: 8, textAlign: 'center', fontWeight: 'bold' }}>
                           Type your password to confirm deletion. This is permanent!
                         </Text>
                         <TextInput
                           style={[
                             styles.input,
                             {
-                              color: colors.text,
-                              borderColor: colors.inputBorder,
-                              backgroundColor: colors.inputBackground,
+                              color: colors.black,
+                              borderColor: colors.black,
+                              backgroundColor: colors.white,
                               marginBottom: 8,
                             }
                           ]}
                           placeholder="Current password"
-                          placeholderTextColor={colors.placeholder}
+                          placeholderTextColor={colors.grey}
                           secureTextEntry
                           value={deletePassword}
                           onChangeText={setDeletePassword}
@@ -376,7 +376,7 @@ const SettingsScreen = ({ navigation }) => {
                         />
 
                         {!deleteConfirmEnabled && (
-                          <Text style={{ color: colors.text, marginBottom: 4 }}>
+                          <Text style={{ color: colors.black, marginBottom: 4 }}>
                             Hold on… Enabling in {deleteCountdown} second{deleteCountdown!==1?'s':''}…
                           </Text>
                         )}
@@ -405,7 +405,7 @@ const SettingsScreen = ({ navigation }) => {
                           onPress={() => { setDeleteMode(false); setDeletePassword(''); setDeleteError(''); }}
                           disabled={isDeleting}
                         >
-                          <Text style={{ color: colors.text, textDecorationLine: 'underline' }}>Cancel</Text>
+                          <Text style={{ color: colors.black, textDecorationLine: 'underline' }}>Cancel</Text>
                         </TouchableOpacity>
                         {deleteError !== '' &&
                           <Text style={{ color: 'red', marginTop: 4, textAlign: 'center' }}>

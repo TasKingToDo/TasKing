@@ -1,19 +1,24 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { Button, Text, View, StyleSheet, Pressable, Dimensions, FlatList, TextInput, Alert, Modal, Image, Platform } from 'react-native';
-import { useSharedValue, useDerivedValue} from 'react-native-reanimated';
 import { Entypo, FontAwesome } from '@expo/vector-icons';
 import { collection, doc, getDoc, updateDoc, query, where, getDocs, addDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import Toast from 'react-native-toast-message';
 
-import { themes } from '../config/colors';
-import useTheme from '../config/useTheme';
-import { SettingsContext } from '../config/SettingsContext';
-import CustomMenu from '../config/customMenu';
+import { themes } from '@/config/colors';
+import useTheme from '@/config/useTheme';
+import { SettingsContext } from '@/config/SettingsContext';
+import CustomMenu from '@/config/customMenu';
 import { FIREBASE_DB } from '@/firebaseConfig';
-import { authContext } from '../config/authContext';
+import { authContext } from '@/config/authContext';
 
-const { height } = Dimensions.get("window");
-const MID_POSITION = 0;
+// Data used to pull images
+import bodyData from '../assets/shopdata/bodyData';
+import shirtData from '../assets/shopdata/shirtData';
+import pantsData from '../assets/shopdata/pantsData';
+import hatData from '../assets/shopdata/hatData';
+import shoesData from '../assets/shopdata/shoesData';
+import accData from '../assets/shopdata/accData';
 
 const FriendsScreen = ({ navigation }) => {
     const { user } = useContext(authContext);
@@ -25,7 +30,6 @@ const FriendsScreen = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [requestModalVisible, setRequestModalVisible] = useState(false);
     const [activeTab, setActiveTab] = useState("received");
-    const translateY = useSharedValue(MID_POSITION);
     const [selectedFriend, setSelectedFriend] = useState(null);
     const [friendModalVisible, setFriendModalVisible] = useState(false);
     const [friendStats, setFriendStats] = useState(null);
@@ -33,100 +37,103 @@ const FriendsScreen = ({ navigation }) => {
 
     if (!settings || !user) return null;
 
-    useEffect(() => {
-        if (!user) return;
-    
-        const userRef = doc(FIREBASE_DB, "users", user.uid);
-        const unsubscribeFriends = onSnapshot(userRef, async (userSnap) => {
-            if (!userSnap.exists()) return;
-            const friendIds = userSnap.data().friends || [];
+    useFocusEffect(
+        useCallback(() => {
+            if (!user) return;
         
-            const friendData = await Promise.all(friendIds.map(async (id) => {
-                const friendDoc = await getDoc(doc(FIREBASE_DB, "users", id));
-                if (friendDoc.exists()) {
-                    const data = friendDoc.data();
-                    return {
-                        id,
-                        username: data.username || "Unknown",
-                        level: data.level || 0,
-                        pfp: data.pfp || null,
-                        equipped: data.equipped || {},
-                        online: data.online ?? false,
-                    };
-                } else {
-                    return {
-                        id,
-                        username: "Unknown",
-                        level: 0,
-                        pfp: null,
-                        online: false,
-                    };
-                }
-            }));
-        
-            setFriends(friendData);
-        });
-    
-        const receivedQuery = query(collection(FIREBASE_DB, "friendRequests"), where("receiverId", "==", user.uid));
-        const unsubscribeRequests = onSnapshot(receivedQuery, async (snapshot) => {
-            const requests = await Promise.all(snapshot.docs.map(async (docSnap) => {
-                const requestData = docSnap.data();
-                const senderRef = doc(FIREBASE_DB, "users", requestData.senderId);
-                const senderSnap = await getDoc(senderRef);
-    
-                return {
-                    id: docSnap.id,
-                    senderId: requestData.senderId,
-                    senderUsername: senderSnap.exists() ? senderSnap.data().username : "Unknown",
-                    status: requestData.status,
-                };
-            }));
-
-            if (requests.length > friendRequests.length) {
-                const newRequest = requests.find(req => !friendRequests.some(existing => existing.id === req.id));
-        
-                if (newRequest) {
-                    Toast.show({
-                        type: 'info',
-                        text1: 'New Friend Request',
-                        text2: `${newRequest.senderUsername} sent you a friend request!`,
-                        position: 'top',
-                        visibilityTime: 5000,
-                        onPress: () => {
-                            Toast.hide();
-                            navigation.navigate('Friends');
-                        },
-                    });
-                }
-            }
-
-            setFriendRequests(requests);
-        });
-    
-        const sentQuery = query(collection(FIREBASE_DB, "friendRequests"), where("senderId", "==", user.uid));
-        const unsubscribeSentRequests = onSnapshot(sentQuery, async (snapshot) => {
-            const requests = await Promise.all(snapshot.docs.map(async (docSnap) => {
-                const requestData = docSnap.data();
-                const receiverRef = doc(FIREBASE_DB, "users", requestData.receiverId);
-                const receiverSnap = await getDoc(receiverRef);
-    
-                return {
-                    id: docSnap.id,
-                    receiverId: requestData.receiverId,
-                    receiverUsername: receiverSnap.exists() ? receiverSnap.data().username : "Unknown",
-                    status: requestData.status,
-                };
-            }));
+            const userRef = doc(FIREBASE_DB, "users", user.uid);
+            const unsubscribeFriends = onSnapshot(userRef, async (userSnap) => {
+                if (!userSnap.exists()) return;
+                const friendIds = userSnap.data().friends || [];
             
-            setSentRequests(requests);
-        });
+                const friendData = await Promise.all(friendIds.map(async (id) => {
+                    const friendDoc = await getDoc(doc(FIREBASE_DB, "users", id));
+                    if (friendDoc.exists()) {
+                        const data = friendDoc.data();
+                        return {
+                            id,
+                            username: data.username || "Unknown",
+                            level: data.level || 0,
+                            pfp: data.pfp || null,
+                            equipped: data.equipped || {},
+                            currentresolution: data.currentresolution || "fourBit",
+                            online: data.online ?? false,
+                        };
+                    } else {
+                        return {
+                            id,
+                            username: "Unknown",
+                            level: 0,
+                            pfp: null,
+                            online: false,
+                        };
+                    }
+                }));
+            
+                setFriends(friendData);
+            });
+        
+            const receivedQuery = query(collection(FIREBASE_DB, "friendRequests"), where("receiverId", "==", user.uid));
+            const unsubscribeRequests = onSnapshot(receivedQuery, async (snapshot) => {
+                const requests = await Promise.all(snapshot.docs.map(async (docSnap) => {
+                    const requestData = docSnap.data();
+                    const senderRef = doc(FIREBASE_DB, "users", requestData.senderId);
+                    const senderSnap = await getDoc(senderRef);
+        
+                    return {
+                        id: docSnap.id,
+                        senderId: requestData.senderId,
+                        senderUsername: senderSnap.exists() ? senderSnap.data().username : "Unknown",
+                        status: requestData.status,
+                    };
+                }));
     
-        return () => {
-            unsubscribeFriends();
-            unsubscribeRequests();
-            unsubscribeSentRequests();
-        };
-    }, [user]);    
+                if (requests.length > friendRequests.length) {
+                    const newRequest = requests.find(req => !friendRequests.some(existing => existing.id === req.id));
+            
+                    if (newRequest) {
+                        Toast.show({
+                            type: 'info',
+                            text1: 'New Friend Request',
+                            text2: `${newRequest.senderUsername} sent you a friend request!`,
+                            position: 'top',
+                            visibilityTime: 5000,
+                            onPress: () => {
+                                Toast.hide();
+                                navigation.navigate('Friends');
+                            },
+                        });
+                    }
+                }
+    
+                setFriendRequests(requests);
+            });
+        
+            const sentQuery = query(collection(FIREBASE_DB, "friendRequests"), where("senderId", "==", user.uid));
+            const unsubscribeSentRequests = onSnapshot(sentQuery, async (snapshot) => {
+                const requests = await Promise.all(snapshot.docs.map(async (docSnap) => {
+                    const requestData = docSnap.data();
+                    const receiverRef = doc(FIREBASE_DB, "users", requestData.receiverId);
+                    const receiverSnap = await getDoc(receiverRef);
+        
+                    return {
+                        id: docSnap.id,
+                        receiverId: requestData.receiverId,
+                        receiverUsername: receiverSnap.exists() ? receiverSnap.data().username : "Unknown",
+                        status: requestData.status,
+                    };
+                }));
+                
+                setSentRequests(requests);
+            });
+        
+            return () => {
+                unsubscribeFriends();
+                unsubscribeRequests();
+                unsubscribeSentRequests();
+            };
+        }, [user])
+    );
 
     const handleSendFriendRequest = async () => {
         if (!friendUsername.trim()) {
@@ -250,7 +257,23 @@ const FriendsScreen = ({ navigation }) => {
             console.error("Error canceling friend request:", error);
             Alert.alert("Error", "Something went wrong. Please try again.");
         }
-    };  
+    };
+    
+    // Used to grab the current character design.
+    const getItemUrl = (
+        data: any[],
+        id: number | undefined | null,
+        resolution: string = "fourBit"
+    ) => {
+        if (typeof id !== "number") return null;
+      
+        const item = data.find((i) => i.id === id);
+        const key = resolution + "Url"; // "fourBitUrl", "eightBitUrl", etc.
+        return item?.[key] || null;
+    };
+    
+    // Used to figure out the resolution in use for the selected friend modal.
+    const resolution = selectedFriend?.currentresolution || "fourBit";
     
     const renderFriendItem = ({ item }) => {
         return (
@@ -287,12 +310,8 @@ const FriendsScreen = ({ navigation }) => {
             >
                 <View style={styles.friendCardContent}>
                     {/* Avatar or placeholder */}
-                    <View style={styles.profilePicWrapper}>
-                        {item.pfp ? (
-                            <Image source={{ uri: item.pfp }} style={styles.profilePic} />
-                        ) : (
-                            <View style={styles.profilePicPlaceholder} />
-                        )}
+                    <View style={styles.headCropContainer}>
+                        <Image source={{ uri: getItemUrl(bodyData, item?.equipped?.body, "fourBit") }} style={styles.headImage} />
                     </View>
 
                     {/* Username and level */}
@@ -368,7 +387,7 @@ const FriendsScreen = ({ navigation }) => {
                 { /* Header */}
                 <View style={styles.headerContainer}>
                     <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30 }}>
-                        <Button title="Back" color={colors.secondary} onPress={() => navigation.navigate('Home')} />
+                        <Button title="Back" color={colors.secondary} onPress={() => {setFriendModalVisible(false); setFriendStats(null); setSelectedFriend(null); setTimeout(() => navigation.goBack(), 10);}} />
                     </View>
                     
                     <View style={{ flex: 1, alignItems: 'center' }}>
@@ -473,14 +492,14 @@ const FriendsScreen = ({ navigation }) => {
 
                                 <View style={{ flexDirection: "row", width: "100%", marginTop: 10 }}>
                                     {/* Left: Character Image */}
-                                    <View style={[styles.friendImageBackground, { backgroundColor: colors.primarySoft }]}>
+                                    <View style={[styles.friendImageBackground, { backgroundColor: themes.dark.grey }]}>
                                         <View style={styles.friendImageContainer}>
-                                            <Image source={{ uri: selectedFriend?.equipped?.body }} style={styles.image} />
-                                            <Image source={{ uri: selectedFriend?.equipped?.shoes }} style={styles.image} />
-                                            <Image source={{ uri: selectedFriend?.equipped?.shirt }} style={styles.image} />
-                                            <Image source={{ uri: selectedFriend?.equipped?.pants }} style={styles.image} />
-                                            <Image source={{ uri: selectedFriend?.equipped?.hat }} style={styles.hatImage} />
-                                            <Image source={{ uri: selectedFriend?.equipped?.acc }} style={styles.image} />
+                                            <Image source={{ uri: getItemUrl(bodyData, selectedFriend?.equipped?.body, resolution) }} style={styles.image} />
+                                            <Image source={{ uri: getItemUrl(shoesData, selectedFriend?.equipped?.shoes, resolution) }} style={styles.image} />
+                                            <Image source={{ uri: getItemUrl(shirtData, selectedFriend?.equipped?.shirt, resolution) }} style={styles.image} />
+                                            <Image source={{ uri: getItemUrl(pantsData, selectedFriend?.equipped?.pants, resolution) }} style={styles.image} />
+                                            <Image source={{ uri: getItemUrl(hatData, selectedFriend?.equipped?.hat, resolution) }} style={styles.hatImage} />
+                                            <Image source={{ uri: getItemUrl(accData, selectedFriend?.equipped?.acc, resolution) }} style={styles.image} />
                                         </View>
                                     </View>
 
@@ -586,6 +605,12 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderRadius: 10,
         padding: 10,
+        borderWidth: 1,
+        borderColor: '#666',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
     },
     friendImageContainer: {
         width: 140,
@@ -623,6 +648,12 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -40,
     },
+    headCropContainer: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        overflow: 'hidden',
+    },
     headerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -631,6 +662,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         paddingTop: Platform.OS === 'ios' ? 50 : 30,
         position: 'relative',
+    },
+    headImage: {
+        width: 50,
+        height: 90,
+        transform: [{ translateY: -5 }],
     },
     headerText: {
         fontSize: 26,
@@ -694,25 +730,6 @@ const styles = StyleSheet.create({
         top: "1%",
         right: "2%",
     },
-    profilePic: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        borderWidth: 1,
-        borderColor: '#ccc',
-    },
-    profilePicPlaceholder: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-    },
-    profilePicWrapper: {
-        width: 50,
-        height: 50,
-        marginRight: 15,
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
     tab: {
         padding: 10,
         borderBottomWidth: 2,
