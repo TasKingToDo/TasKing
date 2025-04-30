@@ -263,12 +263,7 @@ const CreateTaskScreen = ({navigation}) => {
     // Delete a subtask
     const deleteSubtask = (index: number) => {
         setSubtasks(subtasks.filter((_, i) => i !== index));
-    };
-
-    // Navbar
-    const navbarVisible = useDerivedValue(() => {
-        return translateY.value <= height * 0.15;
-    }, []);    
+    }; 
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
@@ -535,7 +530,7 @@ const CreateTaskScreen = ({navigation}) => {
 
                         {/* Navbar */}
                         <View style={[styles.navbar, {backgroundColor: colors.primary}]}>
-                            <CustomMenu navbarVisible={navbarVisible}/>
+                            <CustomMenu />
                             <View style={{width: "65%"}}></View>
                             <Pressable style={styles.saveTask} onPress={handleSaveTask}>
                                 <Text style={{color: themes.light.black, fontSize: 30}}>Save</Text>

@@ -26,9 +26,6 @@ const FriendsScreen = ({ navigation }) => {
     const [requestModalVisible, setRequestModalVisible] = useState(false);
     const [activeTab, setActiveTab] = useState("received");
     const translateY = useSharedValue(MID_POSITION);
-    const navbarVisible = useDerivedValue(() => {
-        return translateY.value <= height * 0.15;
-    }, []);
     const [selectedFriend, setSelectedFriend] = useState(null);
     const [friendModalVisible, setFriendModalVisible] = useState(false);
     const [friendStats, setFriendStats] = useState(null);
@@ -533,7 +530,7 @@ const FriendsScreen = ({ navigation }) => {
 
             { /* Navbar */}
             <View style={[styles.navbar, {backgroundColor: colors.primary}]}>
-                <CustomMenu navbarVisible={navbarVisible}/>
+                <CustomMenu />
                 <View style={{width: "65%"}}></View>
                 <Pressable style={styles.addFriend} onPress={() => setModalVisible(true)}>
                     <Entypo name="add-user" size={70} color={themes.light.black} />

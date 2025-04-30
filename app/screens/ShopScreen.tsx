@@ -297,12 +297,12 @@ const ShopScreen = () => {
     //Set url
     const imageUrl = resolution + "Url";
     //Get equipped items
-    equippedBody = bodyData.find(({ id }) => id === equipped.body)[imageUrl];
-    equippedShirt = shirtData.find(({ id }) => id === equipped.shirt)[imageUrl];
-    equippedPants = pantsData.find(({ id }) => id === equipped.pants)[imageUrl];
-    equippedHat = hatData.find(({ id }) => id === equipped.hat)[imageUrl];
-    equippedShoes = shoesData.find(({ id }) => id === equipped.shoes)[imageUrl];
-    equippedAcc = accData.find(({ id }) => id === equipped.acc)[imageUrl];
+    // equippedBody = bodyData.find(({ id }) => id === equipped.body)[imageUrl];
+    // equippedShirt = shirtData.find(({ id }) => id === equipped.shirt)[imageUrl];
+    // equippedPants = pantsData.find(({ id }) => id === equipped.pants)[imageUrl];
+    // equippedHat = hatData.find(({ id }) => id === equipped.hat)[imageUrl];
+    // equippedShoes = shoesData.find(({ id }) => id === equipped.shoes)[imageUrl];
+    // equippedAcc = accData.find(({ id }) => id === equipped.acc)[imageUrl];
 
     return (
       //render flatlist
