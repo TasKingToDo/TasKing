@@ -7,7 +7,7 @@ import { getFirestore } from "firebase/firestore";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBH090ngRUtlLZCag4r8HY28-KXnzcmbjI",
+  apiKey: process.env.FIREBASE_API_KEY,
   authDomain: "tasking-c1d66.firebaseapp.com",
   databaseURL: "https://tasking-c1d66-default-rtdb.firebaseio.com/",
   projectId: "tasking-c1d66",
