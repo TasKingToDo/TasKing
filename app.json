@@ -4,7 +4,7 @@
     "slug": "TasKing",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/imgs/logo_small.png",
+    "icon": "./app/assets/imgs/logo_small.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,21 +13,22 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./app/assets/imgs/logo_large.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.TasKing"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./app/assets/imgs/logo_large.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./app/assets/imgs/logo_large.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -36,6 +37,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "4647e131-2a00-4999-b70b-6a1cda4aa718"
+      }
     }
   }
 }
