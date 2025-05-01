@@ -1,15 +1,17 @@
 import React, { useContext, useState, useEffect} from 'react';
-import { Button, Modal, Pressable, StyleSheet, Text, View, Image } from "react-native";
-import { Entypo } from "@expo/vector-icons";
+import { Button, Modal, Pressable, StyleSheet, Text, View, } from "react-native";
+import { Menu, User, LineChart, Settings, Upload, } from 'lucide-react-native';
 import Popover from 'react-native-popover-view';
-import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot, collection, query, where, } from 'firebase/firestore';
 import { useNavigation } from 'expo-router';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { themes } from './colors';
 import useTheme from './useTheme';
 import { SettingsContext } from './SettingsContext';
 import { authContext } from './authContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
+import PressableButton from './PressableButton';
 
 const CustomMenu = () => {
     const [showPopover, setShowPopover] = useState(false);
@@ -26,6 +28,22 @@ const CustomMenu = () => {
     // Fetch Balance from Database
     const [balance, setBalance] = useState(0);
     const { user } = useContext(authContext);
+
+    // Used to make a notif for Friends in the menu
+    const [friendRequestCount, setFriendRequestCount] = useState(0);
+
+    // Fetch friend requests
+    useEffect(() => {
+        if (!user) return;
+      
+        const friendRequestsQuery = query(collection(FIREBASE_DB, 'friendRequests'), where('receiverId', '==', user.uid));
+      
+        const unsubscribe = onSnapshot(friendRequestsQuery, (snapshot) => {
+            setFriendRequestCount(snapshot.size);
+        });
+      
+        return () => unsubscribe();
+    }, [user]);
     
     useEffect(() => {
         if (!user) return;
@@ -143,9 +161,12 @@ const CustomMenu = () => {
         <View style={styles.container}>
             <Popover 
                 from={(
-                    <Pressable style={styles.menu} onPress={() => setShowPopover(true)}>
-                        <Entypo name="menu" color={themes.light.black} size={70} />
-                    </Pressable>
+                    <PressableButton style={styles.menu} onPress={() => setShowPopover(true)} shadow={false}>
+                        <Menu color={themes.light.black} size={70} />
+                        {friendRequestCount > 0 && (
+                            <Animated.View entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)} style={{ position: 'absolute', top: 6, right: 1, width: 11, height: 11, borderRadius: 5, backgroundColor: themes.light.decline, }} />
+                        )}
+                    </PressableButton>
                 )}
                 isVisible={showPopover}
                 onRequestClose={handleCloseMenu}
@@ -153,33 +174,40 @@ const CustomMenu = () => {
                 arrowSize={{width: 25, height: 15}}
                 popoverStyle={{backgroundColor: colors.primary}}>
                 <View>
-                    <Pressable style={styles.buttonItems} onPress={handleFriendsNav}>
-                        <Entypo name="user" color={themes.light.black} size={50} />
+                    <PressableButton style={styles.buttonItems} onPress={handleFriendsNav}>
+                        <User color={themes.light.black} size={50} />
                         <View style={[styles.divider, { backgroundColor: colors.primary }]}></View>
                         <Text></Text>
                         <Text style={{fontSize: 40, color: themes.light.black}}>Friends</Text>
-                    </Pressable>
+                        {friendRequestCount > 0 && (
+                            <View style={[styles.notifIndicator, {backgroundColor: themes.light.decline}]}>
+                                <Text style={{ color: themes.light.black, fontSize: 13, fontWeight: 'bold' }}>
+                                    {friendRequestCount > 9 ? '9+' : friendRequestCount}
+                                </Text>
+                            </View>
+                        )}
+                    </PressableButton>
                     <View style={{height: 4}}></View>
-                    <Pressable style={styles.buttonItems} onPress={handleStatsNav}>
-                        <Entypo name="line-graph" color={themes.light.black} size={50} />
+                    <PressableButton style={styles.buttonItems} onPress={handleStatsNav}>
+                        <LineChart color={themes.light.black} size={50} />
                         <View style={[styles.divider, { backgroundColor: colors.primary }]}></View>
                         <Text></Text>
                         <Text style={{fontSize: 40, color: themes.light.black}}>Statistics</Text>
-                    </Pressable>
+                    </PressableButton>
                     <View style={{height: 4}}></View>
-                    <Pressable style={styles.buttonItems} onPress={handleResolutionPress}>
-                        <Entypo name="arrow-up" color={themes.light.black} size={50} />
+                    <PressableButton style={styles.buttonItems} onPress={handleResolutionPress}>
+                        <Upload color={themes.light.black} size={50} />
                         <View style={[styles.divider, { backgroundColor: colors.primary }]}></View>
                         <Text></Text>
                         <Text style={{fontSize: 40, color: themes.light.black}}>Resolution</Text>
-                    </Pressable>
+                    </PressableButton>
                     <View style={{height: 4}}></View>
-                    <Pressable style={styles.buttonItems} onPress={handleSettingsNav}>
-                        <Entypo name="cog" color={themes.light.black} size={50} />
+                    <PressableButton style={styles.buttonItems} onPress={handleSettingsNav}>
+                        <Settings color={themes.light.black} size={50} />
                         <View style={[styles.divider, { backgroundColor: colors.primary }]}></View>
                         <Text></Text>
                         <Text style={{fontSize: 40, color: themes.light.black}}>Settings</Text>
-                    </Pressable>
+                    </PressableButton>
                 </View>
             </Popover>
             <Modal 
@@ -194,44 +222,31 @@ const CustomMenu = () => {
                         <Text style={{fontSize: 15}}> Current Balance: {balance}</Text>
 
                         {/* fourBit Resolution (Always Available) */}
-                        <Pressable 
-                            style={[styles.resolutionButton, currentResolution === "fourBit" && [styles.selectedResolution, { borderColor: colors.primary }]]} 
-                            onPress={() => handleResolutionSelect("fourBit")}
-                        >
-                            <Text style={styles.resolutionText}>4-bit</Text>
-                        </Pressable>
+                        <View style={[styles.resolutionButton, currentResolution === "fourBit" && [styles.selectedResolution, { borderColor: colors.primary }]]}>
+                            <PressableButton onPress={() => handleResolutionSelect("fourBit")} haptic>
+                                <Text style={styles.resolutionText}>4-bit</Text>
+                            </PressableButton>
+                        </View>
 
                         {/* eightBit Resolution */}
-                        <Pressable 
-                            style={[
-                                styles.resolutionButton, 
-                                (!unlockedResolutions.includes("eightBit") && (progress < 100 || balance < 100)) && styles.locked,
-                                currentResolution === "eightBit" && [styles.selectedResolution, { borderColor: colors.primary }]
-                            ]} 
-                            onPress={() => handleResolutionSelect("eightBit")}
-                            disabled={!unlockedResolutions.includes("eightBit") && (progress < 100 || balance < 100)}
-                        >
-                            <Text style={styles.resolutionText}>
-                                8-bit {unlockedResolutions.includes("eightBit") ? "" : `(Progress: ${progress}/100, Cost: 100)`}
-                            </Text>
-                        </Pressable>
+                        <View style={[styles.resolutionButton, (!unlockedResolutions.includes("eightBit") && (progress < 100 || balance < 100)) && styles.locked, currentResolution === "eightBit" && [styles.selectedResolution, { borderColor: colors.primary }]]}>
+                            <PressableButton onPress={() => handleResolutionSelect("eightBit")} disabled={!unlockedResolutions.includes("eightBit") && (progress < 100 || balance < 100)} haptic>
+                                <Text style={styles.resolutionText}>8-bit {unlockedResolutions.includes("eightBit") ? "" : `(Progress: ${progress}/100, Cost: 100)`}</Text>
+                            </PressableButton>
+                        </View>
 
                         {/* sixteenBit Resolution */}
-                        <Pressable 
-                            style={[
-                                styles.resolutionButton, 
-                                (!unlockedResolutions.includes("sixteenBit") && (progress < 400 || balance < 250)) && styles.locked,
-                                currentResolution === "sixteenBit" && [styles.selectedResolution, { borderColor: colors.primary }]
-                            ]} 
-                            onPress={() => handleResolutionSelect("sixteenBit")}
-                            disabled={!unlockedResolutions.includes("sixteenBit") && (progress < 400 || balance < 250)}
-                        >
-                            <Text style={styles.resolutionText}>
-                                16-bit {unlockedResolutions.includes("sixteenBit") ? "" : `(Progress: ${progress}/400, Cost: 250)`}
-                            </Text>
-                        </Pressable>
+                        <View style={[styles.resolutionButton, (!unlockedResolutions.includes("sixteenBit") && (progress < 400 || balance < 250)) && styles.locked, currentResolution === "sixteenBit" && [styles.selectedResolution, { borderColor: colors.primary }]]}>
+                            <PressableButton onPress={() => handleResolutionSelect("sixteenBit")} disabled={!unlockedResolutions.includes("sixteenBit") && (progress < 400 || balance < 250)} haptic>
+                                <Text style={styles.resolutionText}>16-bit {unlockedResolutions.includes("sixteenBit") ? "" : `(Progress: ${progress}/400, Cost: 250)`}</Text>
+                            </PressableButton>
+                        </View>
 
-                        <Button title="Close" color={colors.secondary} onPress={() => setModalVisible(false)} />
+                        <View style={[styles.button, { backgroundColor: colors.secondary }]}>
+                                <PressableButton onPress={() => setModalVisible(false)} haptic>
+                                    <Text style={{color: themes.light.white, fontWeight: 'bold', fontSize: 14}}>CLOSE</Text>
+                                </PressableButton>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -240,6 +255,10 @@ const CustomMenu = () => {
 }
 
 const styles = StyleSheet.create({
+    button: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+    },
     buttonItems: {
         flexDirection: "row", 
         alignItems: "center",
@@ -255,10 +274,10 @@ const styles = StyleSheet.create({
         width: "3%",
     },
     menu: {
+        width: 'auto',
         height: 75,
-        zIndex: 2000,
-        overflow: "visible",
         alignSelf: "flex-start",
+        borderRadius: 8,
     },
     modalBackground: {
         flex: 1,
@@ -277,6 +296,15 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: "bold",
         marginBottom: 10,
+    },
+    notifIndicator: {
+        marginLeft: 6,
+        minWidth: 20,
+        height: 20,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 5,
     },
     resolutionButton: {
         width: "80%",

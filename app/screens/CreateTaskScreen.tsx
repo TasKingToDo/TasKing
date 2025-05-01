@@ -1,12 +1,12 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { useRoute } from '@react-navigation/native';
-import { View, Text, Button, StyleSheet, Pressable, TextInput, Dimensions, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { useSharedValue, useDerivedValue } from 'react-native-reanimated';
+import { View, Text, StyleSheet, Pressable, TextInput, Dimensions, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, ActivityIndicator, InteractionManager } from 'react-native';
+import { useSharedValue, } from 'react-native-reanimated';
 import { doc, getDoc, updateDoc, increment, addDoc, collection } from "firebase/firestore";
 import { Picker } from '@react-native-picker/picker';
 import Slider from '@react-native-community/slider';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Bot, Pen, XCircle } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { themes } from '@/config/colors';
@@ -15,6 +15,7 @@ import { SettingsContext } from '@/config/SettingsContext';
 import CustomMenu from '@/config/customMenu';
 import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '@/config/authContext';
+import PressableButton from '@/config/PressableButton';
 
 const { height } = Dimensions.get("window");
 const MID_POSITION = 0;
@@ -268,7 +269,13 @@ const CreateTaskScreen = ({navigation}) => {
     // Delete a subtask
     const deleteSubtask = (index: number) => {
         setSubtasks(subtasks.filter((_, i) => i !== index));
-    }; 
+    };
+
+    const handleBackPress = () => {
+        InteractionManager.runAfterInteractions(() => {
+            navigation.goBack();
+        });
+    };
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
@@ -279,8 +286,10 @@ const CreateTaskScreen = ({navigation}) => {
                             <View style={[styles.background, { backgroundColor: colors.white }]}>
                                 {/* Header */}
                                 <View style={styles.headerContainer}>
-                                    <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30 }}>
-                                        <Button title="Back" color={colors.secondary} onPress={() => navigation.goBack()} />
+                                    <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30, backgroundColor: colors.secondary, borderRadius: 3 }}>
+                                        <PressableButton onPress={handleBackPress} haptic style={styles.backButton}>
+                                            <Text style={{color: colors.black, fontWeight: 'bold', fontSize: 14}}>BACK</Text>
+                                        </PressableButton>
                                     </View>
                                     <View style={{ flex: 1, alignItems: 'center' }}>
                                         <Text style={[styles.headerText, { color: colors.black }]}>
@@ -502,11 +511,11 @@ const CreateTaskScreen = ({navigation}) => {
                                             {loadingSubtasks ? (
                                                 <ActivityIndicator size={40} color={colors.black} />
                                             ) : (
-                                                <MaterialCommunityIcons name="robot" size={40} color={colors.black} />
+                                                <Bot size={40} color={colors.black} />
                                             )}
                                         </Pressable>
                                         <Pressable onPress={handleAddSubtaskManually}>
-                                            <Ionicons name="create-outline" size={40} color={colors.black} />
+                                            <Pen size={40} color={colors.black} />
                                         </Pressable>
                                     </View>
 
@@ -529,7 +538,7 @@ const CreateTaskScreen = ({navigation}) => {
                                             
                                             {/* Delete Button */}
                                             <Pressable onPress={() => deleteSubtask(index)} style={styles.deleteButton}>
-                                                <Ionicons name="close-circle" size={25} color="red" />
+                                                <XCircle size={25} color="red" />
                                             </Pressable>
                                         </View>
                                     ))}
@@ -558,6 +567,10 @@ const styles = StyleSheet.create({
     background: {
         flex: 1,
         alignItems: "center",
+    },
+    backButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
     },
     container: {
         flex: 1,

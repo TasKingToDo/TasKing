@@ -1,8 +1,10 @@
 import React, { createContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, query, setDoc, updateDoc, where } from 'firebase/firestore';
 import { FIREBASE_AUTH, FIREBASE_DB } from '@/firebaseConfig';
 import { Platform, View, ActivityIndicator, AppState } from 'react-native';
+import Toast from 'react-native-toast-message';
+import { navigationRef } from './navigationRef';
 
 interface AuthContextType {
   user: User | null;
@@ -47,14 +49,45 @@ export const AuthProvider = ({ children }) => {
         // Presence: mark user online
         await updateDoc(userRef, { online: true });
 
+        const receivedRequestsQuery = query(collection(FIREBASE_DB, "friendRequests"), where("receiverId", "==", currentUser.uid));
+
+        let previousRequests: Set<string> = new Set();
+
+        const unsubscribeFriendRequests = onSnapshot(receivedRequestsQuery, async (snapshot) => {
+          for (const change of snapshot.docChanges()) {
+            if (change.type === "added" && !previousRequests.has(change.doc.id)) {
+              const data = change.doc.data();
+              const senderSnap = await getDoc(doc(FIREBASE_DB, "users", data.senderId));
+              const senderUsername = senderSnap.exists() ? senderSnap.data().username : "Someone";
+
+              Toast.show({
+                type: "info",
+                text1: "New Friend Request",
+                text2: `${senderUsername} sent you a friend request!`,
+                position: "top",
+                visibilityTime: 5000,
+                onPress: () => {
+                  Toast.hide();
+                  setTimeout(() => {
+                    if (navigationRef.isReady()) {
+                      navigationRef.navigate("Friends");
+                    }
+                  }, 100);
+                },
+              });
+
+              previousRequests.add(change.doc.id);
+            }
+          }
+        });
+
         if (statsSnap.exists()) {
           const statsData = statsSnap.data();
-          const lastLogin = statsData.lastLoginDate ? new Date(statsData.lastLoginDate) : null;
-        
-          const lastLoginWasToday = lastLogin?.toDateString() === today.toDateString();
-        
+          const lastLoginStr = statsData.lastLoginDate?.trim?.() ?? "";
+          const todayStr = new Date().toISOString().split("T")[0];
+          const lastLoginWasToday = lastLoginStr === todayStr;
+
           const updates: any = {};
-        
           if (!lastLoginWasToday) {
             updates.daysActive = (statsData.daysActive ?? 0) + 1;
             updates.lastLoginDate = todayStr;
@@ -91,6 +124,7 @@ export const AuthProvider = ({ children }) => {
           // Clean up
           return () => {
             subscription.remove();
+            unsubscribeFriendRequests();
             goOffline();
           };
         }

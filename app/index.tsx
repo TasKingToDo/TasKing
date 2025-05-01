@@ -19,6 +19,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import toastConfig from "@/config/toastConfig";
 import Toast from "react-native-toast-message";
+import { navigationRef } from "@/config/navigationRef";
 
 //creating stack navigator
 const Stack = createNativeStackNavigator();
@@ -56,7 +57,7 @@ const Index = () => {
         <SettingsProvider>
           <SafeAreaProvider>
             <NavigationIndependentTree>
-              <NavigationContainer>
+              <NavigationContainer ref={navigationRef}>
                 <RootNavigator />
                 <Toast config={toastConfig} />
               </NavigationContainer>
