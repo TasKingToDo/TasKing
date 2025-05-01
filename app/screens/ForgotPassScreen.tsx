@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { View, StyleSheet, Image, Button, TextInput, Alert, KeyboardAvoidingView, Keyboard, Platform, Pressable, Text} from 'react-native';
 import auth from 'firebase/auth';
-import { themes } from '../config/colors';
+import { themes } from '@/config/colors';
 import { GestureHandlerRootView, TouchableWithoutFeedback } from 'react-native-gesture-handler';
 
 function ForgotPassScreen({navigation}) {

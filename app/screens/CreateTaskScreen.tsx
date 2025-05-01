@@ -1,6 +1,6 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { useRoute } from '@react-navigation/native';
-import { View, Text, Button, StyleSheet, Pressable, TextInput, Dimensions, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, Button, StyleSheet, Pressable, TextInput, Dimensions, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useSharedValue, useDerivedValue } from 'react-native-reanimated';
 import { doc, getDoc, updateDoc, increment, addDoc, collection } from "firebase/firestore";
 import { Picker } from '@react-native-picker/picker';
@@ -9,12 +9,12 @@ import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-import { themes } from '../config/colors';
-import useTheme from '../config/useTheme';
-import { SettingsContext } from '../config/SettingsContext';
-import CustomMenu from '../config/customMenu';
+import { themes } from '@/config/colors';
+import useTheme from '@/config/useTheme';
+import { SettingsContext } from '@/config/SettingsContext';
+import CustomMenu from '@/config/customMenu';
 import { FIREBASE_DB } from '@/firebaseConfig';
-import { authContext } from '../config/authContext';
+import { authContext } from '@/config/authContext';
 
 const { height } = Dimensions.get("window");
 const MID_POSITION = 0;
@@ -40,6 +40,7 @@ const CreateTaskScreen = ({navigation}) => {
     const [customRepeatType, setCustomRepeatType] = useState('days');
     const [difficultyIndex, setDifficultyIndex] = useState(2);
     const [subtasks, setSubtasks] = useState<{ text: string; editable: boolean }[]>([]);
+    const [loadingSubtasks, setLoadingSubtasks] = useState(false);
     const difficultyIndexRef = useRef(difficultyIndex);
     const translateY = useSharedValue(MID_POSITION);
     const settings = useContext(SettingsContext);
@@ -185,7 +186,7 @@ const CreateTaskScreen = ({navigation}) => {
                 }
             }
     
-            navigation.navigate('Home');
+            navigation.goBack();
         } catch (error) {
             console.error("Error saving task: ", error);
             alert("Failed to save task.");
@@ -199,11 +200,13 @@ const CreateTaskScreen = ({navigation}) => {
     
     // AI-generated subtasks (Written by Will and refactored by Bryce)
     const handleGenerateSubtasksAI = async () => {
+        if (loadingSubtasks) return;
         if (!name.trim()) {
             alert("Please enter a task name first.");
             return;
         }
-    
+
+        setLoadingSubtasks(true);
         try {
             const API_KEY = "AIzaSyCUc53d2u7oETlQceWvqwPNgPSAXcYtp9c";
             const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
@@ -242,6 +245,8 @@ const CreateTaskScreen = ({navigation}) => {
         } catch (error) {
             console.error("AI subtask generation failed", error);
             alert("Could not generate subtasks.");
+        } finally {
+            setLoadingSubtasks(false);
         }
     };
     
@@ -493,8 +498,12 @@ const CreateTaskScreen = ({navigation}) => {
 
                                     {/* Buttons for AI and Manual Subtasks */}
                                     <View style={styles.subtaskButtonContainer}>
-                                        <Pressable onPress={handleGenerateSubtasksAI}>
-                                            <MaterialCommunityIcons name="robot" size={40} color={colors.black} />
+                                        <Pressable onPress={handleGenerateSubtasksAI} disabled={loadingSubtasks}>
+                                            {loadingSubtasks ? (
+                                                <ActivityIndicator size={40} color={colors.black} />
+                                            ) : (
+                                                <MaterialCommunityIcons name="robot" size={40} color={colors.black} />
+                                            )}
                                         </Pressable>
                                         <Pressable onPress={handleAddSubtaskManually}>
                                             <Ionicons name="create-outline" size={40} color={colors.black} />

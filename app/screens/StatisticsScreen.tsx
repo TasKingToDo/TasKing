@@ -2,11 +2,10 @@ import React, { useEffect, useState, useContext } from 'react';
 import { Button, Text, View, StyleSheet, Platform, ActivityIndicator, ScrollView } from 'react-native';
 import { doc, setDoc, onSnapshot} from "firebase/firestore";
 
-import { themes } from '../config/colors';
-import useTheme from '../config/useTheme';
-import { SettingsContext } from '../config/SettingsContext';
+import useTheme from '@/config/useTheme';
+import { SettingsContext } from '@/config/SettingsContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
-import { authContext } from '../config/authContext';
+import { authContext } from '@/config/authContext';
 
 const StatisticsScreen = ({ navigation }) => {
     const settings = useContext(SettingsContext);

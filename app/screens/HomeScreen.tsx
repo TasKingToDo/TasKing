@@ -11,12 +11,12 @@ import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as Progress from 'react-native-progress';
 
-import useTheme from '../config/useTheme';
-import { themes } from '../config/colors';
-import { SettingsContext } from '../config/SettingsContext';
+import useTheme from '@/config/useTheme';
+import { themes } from '@/config/colors';
+import { SettingsContext } from '@/config/SettingsContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
-import { authContext } from '../config/authContext';
-import CustomMenu from '../config/customMenu';
+import { authContext } from '@/config/authContext';
+import CustomMenu from '@/config/customMenu';
 import ShopScreen from './ShopScreen';
 
 // Constants
@@ -124,13 +124,13 @@ const SwipeableTask = ({
                 {/* Background Action Boxes */}
                 <Animated.View style={[styles.swipeBackgroundBox, {backgroundColor: colors.decline, left: 0}, deleteBoxStyle]}>
                     <Animated.View style={showDeleteText}>
-                        <Text style={{fontWeight: 'bold', color: colors.black}}>Deleting...</Text>
+                        <Text style={{fontWeight: 'bold', color: themes.light.black}}>Deleting...</Text>
                     </Animated.View>
                 </Animated.View>
 
                 <Animated.View style={[styles.swipeBackgroundBox, {backgroundColor: colors.accept, right: 0}, completeBoxStyle]}>
                     <Animated.View style={showCompleteText}>
-                        <Text style={[{fontWeight: 'bold', color: colors.black}, ]}>{item.completed ? 'Undoing...' : 'Completing...'}</Text>
+                        <Text style={[{fontWeight: 'bold', color: themes.light.black}, ]}>{item.completed ? 'Undoing...' : 'Completing...'}</Text>
                     </Animated.View>
                 </Animated.View>
 
@@ -138,7 +138,7 @@ const SwipeableTask = ({
                 <GestureDetector gesture={swipeGesture} simultaneousHandlers={scrollGestureRef}>
                     <Animated.View style={ animatedStyle }>
                         <Pressable onPress={() => onPress(item.id)}>
-                            <View style={[styles.taskContainer, item.completed && styles.completedTask, { backgroundColor: colors.white }]}>
+                            <View style={[styles.taskContainer, { backgroundColor: colors.white }]}>
                                 {/* Task Name, Edit Button, and Notif Bell */}
                                 <View style={styles.headerRow}>
                                     <Text style={[styles.taskTitle, { color: colors.black }]} numberOfLines={1} ellipsizeMode='tail'>
@@ -196,12 +196,12 @@ const HomeScreen = () => {
     // Constants
     const colors = useTheme();
     const { user } = useContext(authContext);
-    const [allTasks, setAllTasks] = useState<any[]>([]);
+    const [rawTasks, setRawTasks] = useState<any[]>([]);
+    const [sortOption, setSortOption] = useState<string>('createdAt');
     const [showOnlyShared, setShowOnlyShared] = useState<boolean>(false);
     const [userMap, setUserMap] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
     const [expandedTask, setExpandedTask] = useState<string | null>(null);
-    const [sortOption, setSortOption] = useState<string>('createdAt');
     // Nav constant
     const navigation = useNavigation();
     // XP and Level constants
@@ -221,7 +221,6 @@ const HomeScreen = () => {
     const dragY = useSharedValue(snapPoints.middle);
     const startY = useSharedValue(0);
     const scrollGestureRef = useRef(null);
-    const filteredTasks = showOnlyShared ? allTasks.filter(t => (t.userId === user.uid && !!t.collaboratorId) || t.collaboratorId === user.uid) : allTasks;
 
     // XP calculator function
     const calculateLevel = (xp: number) => {
@@ -277,12 +276,12 @@ const HomeScreen = () => {
 
         const unsubOwner = onSnapshot(ownerQuery, (ownerSnapshot) => {
             const ownerTasks = ownerSnapshot.docs.map(doc => normalizeTask(doc.id, doc.data()));
-            setAllTasks(prev => mergeTaskLists(prev, ownerTasks));
+            setRawTasks(prev => mergeTaskLists(prev, ownerTasks));
         });
 
         const unsubCollaborator = onSnapshot(collaboratorQuery, (collabSnapshot) => {
             const collabTasks = collabSnapshot.docs.map(doc => normalizeTask(doc.id, doc.data()));
-            setAllTasks(prev => mergeTaskLists(prev, collabTasks));
+            setRawTasks(prev => mergeTaskLists(prev, collabTasks));
         });
 
         return () => {
@@ -290,6 +289,20 @@ const HomeScreen = () => {
             unsubCollaborator();
         };
     }, [user]);
+
+    // Properly sorts task based on certain criteria
+    const sortTasks = (tasks: Task[], option: string): Task[] => {
+        return [...tasks].sort((a, b) => {
+            if (option === 'name') return a.name.localeCompare(b.name);
+            if (option === 'date') return new Date(a.date).getTime() - new Date(b.date).getTime();
+            if (option === 'createdAt') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            if (option === 'reverseCreatedAt') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            return 0;
+        });
+    };
+
+    const allTasks = React.useMemo(() => sortTasks(rawTasks, sortOption), [rawTasks, sortOption]);
+    const filteredTasks = showOnlyShared ? allTasks.filter(t => (t.userId === user.uid && !!t.collaboratorId) || t.collaboratorId === user.uid) : allTasks;
 
     // Grabs task to be sorted between shared or all.
     useEffect(() => {
@@ -317,7 +330,7 @@ const HomeScreen = () => {
             setUserMap(userMapData);
         };
 
-        if (user) fetchUsers();
+        if (user && allTasks?.length >= 0) fetchUsers();
     }, [allTasks]);
 
     // Sets of grabbing information for notifications.
@@ -384,8 +397,7 @@ const HomeScreen = () => {
             transform: [{ translateY }],
         };
     });
-      
-      
+
     const normalizeTask = (id: string, data: any): Task => {
         return {
             id,
@@ -397,21 +409,10 @@ const HomeScreen = () => {
     const mergeTaskLists = (prev: any[], incoming: any[]) => {
         const map = new Map(prev.map(task => [task.id, task]));
         for (let task of incoming) {
-            map.set(task.id, task);
+          map.set(task.id, task);
         }
-        return sortTasks(Array.from(map.values()), sortOption);
-    };
-    
-    // Properly sorts task based on certain criteria
-    const sortTasks = (tasks: Task[], option: string): Task[] => {
-        return [...tasks].sort((a, b) => {
-            if (option === 'name') return a.name.localeCompare(b.name);
-            if (option === 'date') return new Date(a.date).getTime() - new Date(b.date).getTime();
-            if (option === 'createdAt') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-            if (option === 'reverseCreatedAt') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-            return 0;
-        });
-    };
+        return Array.from(map.values()); // no sort here anymore
+    };    
 
     const updateTaskCompletion = async (task: Task, markComplete: boolean) => {
         if (!user) return;
@@ -625,7 +626,7 @@ const HomeScreen = () => {
         const markComplete = !task.completed;
         const updatedSubtasks = task.subtasks.map(sub => ({ ...sub, completed: markComplete }));
 
-        setAllTasks(prev =>
+        setRawTasks(prev =>
             prev.map(t =>  t.id === task.id ? { ...t, completed: markComplete, subtasks: updatedSubtasks } : t)
         );
       
@@ -640,7 +641,7 @@ const HomeScreen = () => {
     
     // Handles deleting a task
     const handleDeleteTask = async (taskId: string) => {
-        setAllTasks(prev => prev.filter(t => t.id !== taskId));
+        setRawTasks(prev => prev.filter(t => t.id !== taskId));
       
         try {
             const taskRef = doc(FIREBASE_DB, "tasks", taskId);
@@ -801,7 +802,7 @@ const HomeScreen = () => {
                         )}
 
                         {/* Task List */}
-                        {filteredTasks.length === 0 ? (
+                        {Array.isArray(filteredTasks) && filteredTasks.length === 0 ? (
                             <Text style={styles.noTasksText}>No tasks available</Text>
                         ) : (
                             <GestureHandlerFlatList
