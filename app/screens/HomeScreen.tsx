@@ -1,23 +1,22 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Text, View, StyleSheet, Pressable, TouchableOpacity, Modal, Dimensions } from 'react-native';
+import { Text, View, StyleSheet, Pressable, TouchableOpacity, Modal, Dimensions, FlatList } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { collection, deleteDoc, doc, updateDoc, query, where, getDoc, onSnapshot, increment, setDoc } from "firebase/firestore";
-import { GestureHandlerRootView, Gesture, GestureDetector, FlatList as GestureHandlerFlatList } from 'react-native-gesture-handler';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS, useAnimatedProps, useDerivedValue, interpolate } from 'react-native-reanimated';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import { Feather } from "@expo/vector-icons";
+import { GestureHandlerRootView, Gesture, GestureDetector, NativeViewGestureHandler, } from 'react-native-gesture-handler';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS, interpolate } from 'react-native-reanimated';
+import { CirclePlus, Bell, SquarePen, } from 'lucide-react-native';
 import { useNavigation } from "@react-navigation/native";
 import * as Progress from 'react-native-progress';
 
 import useTheme from '@/config/useTheme';
 import { themes } from '@/config/colors';
-import { SettingsContext } from '@/config/SettingsContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '@/config/authContext';
 import CustomMenu from '@/config/customMenu';
 import ShopScreen from './ShopScreen';
+import PressableButton from '@/config/PressableButton';
 
 // Constants
 const screenHeight = Dimensions.get('window').height;
@@ -44,7 +43,7 @@ type Task = {
 };
 
 const SwipeableTask = ({
-    item, getSharingLabel, formatRepeat, colors, navigation, onPress, onDelete, onComplete, canEditTask, handleNotificationPress, onToggleSubtask, expandedTask, scrollGestureRef
+    item, getSharingLabel, formatRepeat, colors, navigation, onPress, onDelete, onComplete, canEditTask, handleNotificationPress, onToggleSubtask, expandedTask, scrollRef
 } : {
     item: Task;
     getSharingLabel: (task: Task) => string | null;
@@ -58,30 +57,28 @@ const SwipeableTask = ({
     handleNotificationPress: (taskId: string) => void;
     onToggleSubtask: (taskId: string, subtaskIndex: number) => void;
     expandedTask: string | null;
-    scrollGestureRef: React.RefObject<any>;
+    scrollRef: React.RefObject<any>;
 }) => {
         // Task swiping
         const translateX = useSharedValue(0);
       
         const swipeGesture = Gesture.Pan()
             .onUpdate((event) => {
-                const dragX = event.translationX;
-
-                const dampenedX = dragX * 0.6;
-
-                translateX.value = dampenedX;
+                translateX.value = event.translationX * 0.6;
             })
             .onEnd(() => {
                 if (translateX.value > 120) {
-                    runOnJS(onDelete)(item.id);
+                runOnJS(onDelete)(item.id);
                 } else if (translateX.value < -120) {
-                    runOnJS(onComplete)(item);
+                runOnJS(onComplete)(item);
                 }
                 translateX.value = withSpring(0, {
-                    damping: 25,
-                    stiffness: 200,
+                damping: 25,
+                stiffness: 200,
                 });
-            });
+            })
+            .failOffsetY([-10, 10])
+            .simultaneousWithExternalGesture(scrollRef);
 
         const animatedStyle = useAnimatedStyle(() => ({
             transform: [{ translateX: translateX.value }],
@@ -135,7 +132,7 @@ const SwipeableTask = ({
                 </Animated.View>
 
                 {/* Swipeable Foreground */}
-                <GestureDetector gesture={swipeGesture} simultaneousHandlers={scrollGestureRef}>
+                <GestureDetector gesture={swipeGesture}>
                     <Animated.View style={ animatedStyle }>
                         <Pressable onPress={() => onPress(item.id)}>
                             <View style={[styles.taskContainer, { backgroundColor: colors.white }]}>
@@ -146,13 +143,13 @@ const SwipeableTask = ({
                                     </Text>
                                     <View style={styles.iconRow}>
                                         {canEditTask(item) && (
-                                            <TouchableOpacity onPress={() => navigation.navigate("Create Task", { taskId: item.id })} style={styles.iconButton}>
-                                                <Icon name="edit" size={20} color={colors.grey} />
-                                            </TouchableOpacity>
+                                            <PressableButton onPress={() => navigation.navigate("Create Task", { taskId: item.id })} style={styles.iconButton}>
+                                                <SquarePen size={20} color={colors.grey} />
+                                            </PressableButton>
                                         )}
-                                        <TouchableOpacity onPress={() => handleNotificationPress(item.id)} style={styles.iconButton}>
-                                            <Icon name="bell" size={20} color={item.notificationPreset ? 'orange' : 'gray'} />
-                                        </TouchableOpacity>
+                                        <PressableButton onPress={() => handleNotificationPress(item.id)} style={styles.iconButton}>
+                                            <Bell size={20} color={item.notificationPreset ? 'orange' : 'gray'} />
+                                        </PressableButton>
                                     </View>
                                 </View>
 
@@ -200,7 +197,6 @@ const HomeScreen = () => {
     const [sortOption, setSortOption] = useState<string>('createdAt');
     const [showOnlyShared, setShowOnlyShared] = useState<boolean>(false);
     const [userMap, setUserMap] = useState<Record<string, string>>({});
-    const [loading, setLoading] = useState(true);
     const [expandedTask, setExpandedTask] = useState<string | null>(null);
     // Nav constant
     const navigation = useNavigation();
@@ -220,7 +216,7 @@ const HomeScreen = () => {
     };
     const dragY = useSharedValue(snapPoints.middle);
     const startY = useSharedValue(0);
-    const scrollGestureRef = useRef(null);
+    const scrollRef = useRef<NativeViewGestureHandler>(null);
 
     // XP calculator function
     const calculateLevel = (xp: number) => {
@@ -632,7 +628,7 @@ const HomeScreen = () => {
       
         try {
             const taskRef = doc(FIREBASE_DB, "tasks", task.id);
-            await updateDoc(taskRef, { completed: markComplete, subtasks: updatedSubtasks });
+            await updateDoc(taskRef, { completed: markComplete, subtask: updatedSubtasks });
             await updateTaskCompletion({ ...task, subtasks: updatedSubtasks }, markComplete);
         } catch (error) {
             console.error("Failed to update task:", error);
@@ -656,8 +652,9 @@ const HomeScreen = () => {
         const task = allTasks.find(t => t.id === taskId);
         if (!task) return;
     
-        const updatedSubtasks = [...task.subtasks];
-        updatedSubtasks[subtaskIndex].completed = !updatedSubtasks[subtaskIndex].completed;
+        const updatedSubtasks = task.subtasks.map((sub, index) =>
+            index === subtaskIndex ? { ...sub, completed: !sub.completed } : sub
+        );
         const allSubtasksCompleted = updatedSubtasks.every(sub => sub.completed);
         const taskRef = doc(FIREBASE_DB, "tasks", taskId);
     
@@ -805,33 +802,34 @@ const HomeScreen = () => {
                         {Array.isArray(filteredTasks) && filteredTasks.length === 0 ? (
                             <Text style={styles.noTasksText}>No tasks available</Text>
                         ) : (
-                            <GestureHandlerFlatList
-                                data={filteredTasks}
-                                scrollEnabled
-                                keyboardShouldPersistTaps="handled"
-                                showsVerticalScrollIndicator
-                                simultaneousHandlers={scrollGestureRef}
-                                keyExtractor={(item) => item.id}
-                                style={{ flexGrow: 0 }}
-                                contentContainerStyle={{ paddingBottom: 200, }}
-                                renderItem={({item}) => (
-                                    <SwipeableTask 
-                                        item={item}
-                                        getSharingLabel={getSharingLabel}
-                                        formatRepeat={formatRepeat}
-                                        colors={colors}
-                                        navigation={navigation}
-                                        onPress={handleTaskPress}
-                                        onDelete={handleDeleteTask}     
-                                        onComplete={handleCompleteTask} 
-                                        onToggleSubtask={toggleSubtaskCompletion}
-                                        expandedTask={expandedTask}
-                                        canEditTask={canEditTask}
-                                        handleNotificationPress={handleNotificationPress}
-                                        scrollGestureRef={scrollGestureRef}
-                                    />
-                                )}
-                            />
+                            <NativeViewGestureHandler ref={scrollRef}>
+                                <FlatList
+                                    data={filteredTasks}
+                                    scrollEnabled
+                                    keyboardShouldPersistTaps="handled"
+                                    showsVerticalScrollIndicator
+                                    keyExtractor={(item) => item.id}
+                                    style={{ flexGrow: 0 }}
+                                    contentContainerStyle={{ paddingBottom: 200, }}
+                                    renderItem={({item}) => (
+                                        <SwipeableTask 
+                                            item={item}
+                                            getSharingLabel={getSharingLabel}
+                                            formatRepeat={formatRepeat}
+                                            colors={colors}
+                                            navigation={navigation}
+                                            onPress={handleTaskPress}
+                                            onDelete={handleDeleteTask}     
+                                            onComplete={handleCompleteTask} 
+                                            onToggleSubtask={toggleSubtaskCompletion}
+                                            expandedTask={expandedTask}
+                                            canEditTask={canEditTask}
+                                            handleNotificationPress={handleNotificationPress}
+                                            scrollRef={scrollRef}
+                                        />
+                                    )}
+                                />
+                            </NativeViewGestureHandler>
                         )}
                     </Animated.View>
 
@@ -856,9 +854,9 @@ const HomeScreen = () => {
                                 Lvl. {level}
                             </Text>
                         </View>
-                        <Pressable style={styles.createTask} onPress={() => navigation.navigate('Create Task')}>
-                            <Feather name="plus-circle" size={70} color={themes.light.black} />
-                        </Pressable>
+                        <PressableButton style={styles.createTask} onPress={() => navigation.navigate('Create Task')}>
+                            <CirclePlus size={70} color={themes.light.black} strokeWidth={1.5} />
+                        </PressableButton>
                     </Animated.View>
 
                     {/* Notification Preset Modal */}

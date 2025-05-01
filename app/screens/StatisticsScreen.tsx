@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Button, Text, View, StyleSheet, Platform, ActivityIndicator, ScrollView } from 'react-native';
+import { Text, View, StyleSheet, Platform, ActivityIndicator, ScrollView } from 'react-native';
 import { doc, setDoc, onSnapshot} from "firebase/firestore";
 
 import useTheme from '@/config/useTheme';
 import { SettingsContext } from '@/config/SettingsContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '@/config/authContext';
+import PressableButton from '@/config/PressableButton';
 
 const StatisticsScreen = ({ navigation }) => {
     const settings = useContext(SettingsContext);
@@ -113,8 +114,10 @@ const StatisticsScreen = ({ navigation }) => {
         <View style={[styles.background, { backgroundColor: colors.white }]}>
             {/* Header */}
             <View style={styles.headerContainer}>
-                <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30 }}>
-                    <Button title="Back" color={colors.secondary} onPress={() => navigation.goBack()} />
+                <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30, backgroundColor: colors.secondary, borderRadius: 3 }}>
+                    <PressableButton onPress={() => navigation.goBack()} haptic style={styles.backButton}>
+                        <Text style={{color: colors.black, fontWeight: 'bold', fontSize: 14}}>BACK</Text>
+                    </PressableButton>
                 </View>
                 <View style={{ flex: 1, alignItems: 'center' }}>
                     <Text style={[styles.headerText, { color: colors.black }]}>
@@ -143,6 +146,10 @@ const StatisticsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     background: {
         flex: 1,
+    },
+    backButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
     },
     headerContainer: {
         flexDirection: 'row',
