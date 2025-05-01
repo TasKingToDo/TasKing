@@ -208,7 +208,7 @@ const CreateTaskScreen = ({navigation}) => {
 
         setLoadingSubtasks(true);
         try {
-            const API_KEY = "AIzaSyCUc53d2u7oETlQceWvqwPNgPSAXcYtp9c";
+            const API_KEY = process.env.GEMINI_API_KEY;
             const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
             const prompt = `Please generate a sensible number of subtasks, less than or equal to 10, with no formatting (like markdown and others); for the main task: ${name}`;
     
