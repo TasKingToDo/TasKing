@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import {
-  Button, Text, View, Switch, TouchableOpacity, StyleSheet, TextInput,
+  Text, View, Switch, TouchableOpacity, StyleSheet, TextInput,
   KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback, Keyboard
 } from 'react-native';
 import { getAuth, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential, deleteUser } from 'firebase/auth';
@@ -8,6 +8,7 @@ import { getFirestore, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 import { SettingsContext } from '@/config/SettingsContext';
 import useTheme from '@/config/useTheme';
+import PressableButton from '@/config/PressableButton';
 
 const SettingsScreen = ({ navigation }) => {
   const settings = useContext(SettingsContext);
@@ -199,8 +200,10 @@ const SettingsScreen = ({ navigation }) => {
           <View style={[styles.background, { backgroundColor: colors.white }]}>
 
             <View style={styles.headerContainer}>
-              <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30 }}>
-                <Button title="Back" color={colors.secondary} onPress={() => navigation.goBack()} />
+              <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30, backgroundColor: colors.secondary, borderRadius: 3 }}>
+                <PressableButton onPress={() => navigation.goBack()} haptic style={styles.backButton}>
+                  <Text style={{color: colors.black, fontWeight: 'bold', fontSize: 14}}>BACK</Text>
+                </PressableButton>
               </View>
               <View style={{ flex: 1, alignItems: 'center' }}>
                 <Text style={[styles.headerText, { color: colors.black }]}>Your Settings</Text>
@@ -435,6 +438,10 @@ export default SettingsScreen;
 
 const styles = StyleSheet.create({
   background: { flex: 1, alignItems: 'center' },
+  backButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
   headerContainer: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     width: '100%', paddingHorizontal: 15, paddingTop: Platform.OS === 'ios' ? 50 : 30, position: 'relative',

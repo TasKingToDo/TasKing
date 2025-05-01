@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
-import { Button, Text, View, StyleSheet, Pressable, Dimensions, FlatList, TextInput, Alert, Modal, Image, Platform } from 'react-native';
-import { Entypo, FontAwesome } from '@expo/vector-icons';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { Button, Text, View, StyleSheet, Pressable, Dimensions, FlatList, TextInput, Alert, Modal, Image, Platform, InteractionManager} from 'react-native';
+import { Bell, UserPlus } from 'lucide-react-native';
 import { collection, doc, getDoc, updateDoc, query, where, getDocs, addDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import Toast from 'react-native-toast-message';
 
@@ -19,8 +19,9 @@ import pantsData from '../assets/shopdata/pantsData';
 import hatData from '../assets/shopdata/hatData';
 import shoesData from '../assets/shopdata/shoesData';
 import accData from '../assets/shopdata/accData';
+import PressableButton from '@/config/PressableButton';
 
-const FriendsScreen = ({ navigation }) => {
+const FriendsScreen = () => {
     const { user } = useContext(authContext);
     const colors = useTheme();
     const [friends, setFriends] = useState([]);
@@ -33,6 +34,7 @@ const FriendsScreen = ({ navigation }) => {
     const [selectedFriend, setSelectedFriend] = useState(null);
     const [friendModalVisible, setFriendModalVisible] = useState(false);
     const [friendStats, setFriendStats] = useState(null);
+    const navigation = useNavigation();
     const settings = useContext(SettingsContext);
 
     if (!settings || !user) return null;
@@ -90,20 +92,6 @@ const FriendsScreen = ({ navigation }) => {
     
                 if (requests.length > friendRequests.length) {
                     const newRequest = requests.find(req => !friendRequests.some(existing => existing.id === req.id));
-            
-                    if (newRequest) {
-                        Toast.show({
-                            type: 'info',
-                            text1: 'New Friend Request',
-                            text2: `${newRequest.senderUsername} sent you a friend request!`,
-                            position: 'top',
-                            visibilityTime: 5000,
-                            onPress: () => {
-                                Toast.hide();
-                                navigation.navigate('Friends');
-                            },
-                        });
-                    }
                 }
     
                 setFriendRequests(requests);
@@ -379,15 +367,26 @@ const FriendsScreen = ({ navigation }) => {
         if (diffHours < 24) return `Last on ${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
         if (diffDays === 1) return "Last on Yesterday";
         return `Last on ${diffDays} days ago`;
-    };       
+    };
+    
+    const handleBackPress = () => {
+        setFriendModalVisible(false);
+        setFriendStats(null);
+        setSelectedFriend(null);
+        InteractionManager.runAfterInteractions(() => {
+            navigation.goBack();
+        });
+    };
 
     return (
         <View style={{flex: 1}}>
             <View style={[styles.background, { backgroundColor: colors.white }]}>
                 { /* Header */}
                 <View style={styles.headerContainer}>
-                    <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30 }}>
-                        <Button title="Back" color={colors.secondary} onPress={() => {setFriendModalVisible(false); setFriendStats(null); setSelectedFriend(null); setTimeout(() => navigation.goBack(), 10);}} />
+                    <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30, backgroundColor: colors.secondary, borderRadius: 3 }}>
+                        <PressableButton onPress={handleBackPress} haptic style={styles.button}>
+                            <Text style={{color: themes.light.white, fontWeight: 'bold', fontSize: 14}}>BACK</Text>
+                        </PressableButton>
                     </View>
                     
                     <View style={{ flex: 1, alignItems: 'center' }}>
@@ -397,9 +396,14 @@ const FriendsScreen = ({ navigation }) => {
                     </View>
 
                     <View style={{ position: 'absolute', right: 15, top: Platform.OS === 'ios' ? 50 : 30}}>
-                        <Pressable onPress={() => setRequestModalVisible(true)}>
-                            <FontAwesome name="bell" size={35} color={colors.black} />
-                        </Pressable>
+                        <PressableButton onPress={() => setRequestModalVisible(true)}>
+                            <Bell size={35} color={colors.black} />
+                            {friendRequests.length > 0 && (
+                                <View style={[styles.notifIndicator, {backgroundColor: themes.light.decline}]}>
+                                    <Text style={{fontSize: 12, color: themes.light.black, fontWeight: 'bold'}}>{friendRequests.length > 9 ? "9+" : friendRequests.length}</Text>
+                                </View>
+                            )}
+                        </PressableButton>
                     </View>
                 </View>
 
@@ -413,12 +417,16 @@ const FriendsScreen = ({ navigation }) => {
                     <View style={styles.modalBackground}>
                         <View style={styles.modalContainer}>
                             <View style={styles.tabBar}>
-                                <Pressable onPress={() => setActiveTab("received")} style={[styles.tab, activeTab === "received" && { borderColor: colors.secondary }]}>
-                                    <Text>Received</Text>
-                                </Pressable>
-                                <Pressable onPress={() => setActiveTab("sent")} style={[styles.tab, activeTab === "sent" && { borderColor: colors.secondary }]}>
-                                    <Text>Sent</Text>
-                                </Pressable>
+                                <View style={[styles.tab, activeTab === "received" && { borderBottomWidth: 2, borderColor: colors.secondary, backgroundColor: "transparent" }]}>
+                                    <PressableButton onPress={() => setActiveTab("received")} shadow={false} haptic>
+                                        <Text style={{ fontWeight: activeTab === "received" ? "bold" : "normal" }}>Received</Text>
+                                    </PressableButton>
+                                </View>
+                                <View style={[styles.tab, activeTab === "sent" && { borderBottomWidth: 2, borderColor: colors.secondary, backgroundColor: "transparent" }]}>
+                                    <PressableButton onPress={() => setActiveTab("sent")} shadow={false} haptic>
+                                        <Text style={{ fontWeight: activeTab === "sent" ? "bold" : "normal" }}>Sent</Text>
+                                    </PressableButton>
+                                </View>
                             </View>
 
                             {activeTab === "received" ? (
@@ -428,8 +436,16 @@ const FriendsScreen = ({ navigation }) => {
                                     renderItem={({ item }) => (
                                         <View style={styles.tabContent}>
                                             <Text style={{marginHorizontal: 15}}>Request from {item.senderUsername}</Text>
-                                            <Button title="Accept" onPress={() => handleAcceptFriendRequest(item.id, item.senderId)} color={colors.accept}/>
-                                            <Button title="Decline" onPress={() => handleDeclineFriendRequest(item.id)} color={colors.decline} />
+                                            <View style={[styles.button, {backgroundColor: colors.accept}]}>
+                                                <PressableButton onPress={() => handleAcceptFriendRequest(item.id, item.senderId)} haptic>
+                                                    <Text style={{color: themes.light.black, fontWeight: 'bold', fontSize: 14}}>ACCEPT</Text>
+                                                </PressableButton>
+                                            </View>
+                                            <View style={[styles.button, {backgroundColor: colors.decline}]}>
+                                                <PressableButton onPress={() => handleDeclineFriendRequest(item.id)} haptic>
+                                                    <Text style={{color: themes.light.black, fontWeight: 'bold', fontSize: 14}}>DECLINE</Text>
+                                                </PressableButton>
+                                            </View>
                                         </View>
                                     )}
                                 />
@@ -440,13 +456,20 @@ const FriendsScreen = ({ navigation }) => {
                                     renderItem={({ item }) => (
                                         <View style={styles.tabContent}>
                                             <Text style={{marginHorizontal: 15}}>Request to {item.receiverUsername}</Text>
-                                            <Button title="Cancel" onPress={() => handleCancelFriendRequest(item.id)} color={colors.decline} />
+                                            <View style={[styles.button, {backgroundColor: colors.decline}]}>
+                                                <PressableButton onPress={() => handleDeclineFriendRequest(item.id)} haptic>
+                                                    <Text style={{color: themes.light.white, fontWeight: 'bold', fontSize: 14}}>CANCEL</Text>
+                                                </PressableButton>
+                                            </View>
                                         </View>
                                     )}
                                 />
                             )}
-
-                            <Button title="Close" color={colors.secondary} onPress={() => setRequestModalVisible(false)} />
+                            <View style={[styles.button, { backgroundColor: colors.secondary }]}>
+                                <PressableButton onPress={() => setRequestModalVisible(false)} haptic>
+                                    <Text style={{color: themes.light.white, fontWeight: 'bold', fontSize: 14}}>CLOSE</Text>
+                                </PressableButton>
+                            </View>
                         </View>
                     </View>
                 </Modal>
@@ -525,21 +548,28 @@ const FriendsScreen = ({ navigation }) => {
                                 </View>
 
                                 <View style={{ marginTop: 15, alignSelf: "center", flexDirection: "row", gap: 10}}>
-                                    <Button
-                                        title="Remove Friend"
-                                        onPress={() => {
-                                            Alert.alert(
-                                                "Remove Friend",
-                                                `Are you sure you want to remove ${selectedFriend.username}?`,
-                                                [
-                                                    { text: "Cancel", style: "cancel" },
-                                                    { text: "Remove", style: "destructive", onPress: () => handleRemoveFriend(selectedFriend.id) }
-                                                ]
-                                            );
-                                        }}
-                                        color={colors.decline}
-                                    />
-                                    <Button title="Close" color={colors.secondary} onPress={() => setFriendModalVisible(false)} />
+                                    <View style={[styles.button, { backgroundColor: colors.decline }]}>
+                                        <PressableButton 
+                                            onPress={() => {
+                                                Alert.alert(
+                                                    "Remove Friend",
+                                                    `Are you sure you want to remove ${selectedFriend.username}?`,
+                                                    [
+                                                        { text: "Cancel", style: "cancel" },
+                                                        { text: "Remove", style: "destructive", onPress: () => handleRemoveFriend(selectedFriend.id) }
+                                                    ]
+                                                );
+                                            }} 
+                                            haptic
+                                        >
+                                            <Text style={{color: themes.light.black, fontWeight: 'bold', fontSize: 14}}>REMOVE FRIEND</Text>
+                                        </PressableButton>
+                                    </View>
+                                    <View style={[styles.button, { backgroundColor: colors.secondary }]}>
+                                        <PressableButton onPress={() => setFriendModalVisible(false)} haptic>
+                                            <Text style={{color: themes.light.white, fontWeight: 'bold', fontSize: 14}}>CLOSE</Text>
+                                        </PressableButton>
+                                    </View>
                                 </View>
                             </>
                         )}
@@ -551,9 +581,9 @@ const FriendsScreen = ({ navigation }) => {
             <View style={[styles.navbar, {backgroundColor: colors.primary}]}>
                 <CustomMenu />
                 <View style={{width: "65%"}}></View>
-                <Pressable style={styles.addFriend} onPress={() => setModalVisible(true)}>
-                    <Entypo name="add-user" size={70} color={themes.light.black} />
-                </Pressable>
+                <PressableButton style={styles.addFriend} onPress={() => setModalVisible(true)}>
+                    <UserPlus size={70} color={themes.light.black} />
+                </PressableButton>
             </View>
 
             { /* Add Friend Modal */}
@@ -574,8 +604,16 @@ const FriendsScreen = ({ navigation }) => {
                             onChangeText={setFriendUsername}
                         />
                         <View style={styles.modalButtons}>
-                            <Button title="Cancel" onPress={() => setModalVisible(false)} color={colors.decline} />
-                            <Button title="Add Friend" onPress={handleSendFriendRequest} color={colors.accept} />
+                            <View style={[styles.button, { backgroundColor: colors.decline }]}>
+                                <PressableButton onPress={() => setModalVisible(false)} haptic>
+                                    <Text style={{color: themes.light.black, fontWeight: 'bold', fontSize: 14}}>CANCEL</Text>
+                                </PressableButton>
+                            </View>
+                            <View style={[styles.button, { backgroundColor: colors.accept }]}>
+                                <PressableButton onPress={handleSendFriendRequest} haptic>
+                                    <Text style={{color: themes.light.black, fontWeight: 'bold', fontSize: 14}}>ADD FRIEND</Text>
+                                </PressableButton>
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -594,6 +632,10 @@ const styles = StyleSheet.create({
     background: {
         flex: 1,
         alignItems: "center",
+    },
+    button: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
     },
     friendCardContent: {
         flexDirection: 'row',
@@ -724,6 +766,17 @@ const styles = StyleSheet.create({
         marginTop: 20,
         fontSize: 20,
         fontWeight: "bold",
+    },
+    notifIndicator: {
+        position: 'absolute', 
+        top: -4,
+        right: -6,
+        minWidth: 18,
+        height: 18,
+        paddingHorizontal: 4,
+        borderRadius: 9,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     notification: {
         position: "absolute",
