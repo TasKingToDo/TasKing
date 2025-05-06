@@ -438,12 +438,12 @@ const FriendsScreen = () => {
                                             <Text style={{marginHorizontal: 15}}>Request from {item.senderUsername}</Text>
                                             <View style={[styles.button, {backgroundColor: colors.accept}]}>
                                                 <PressableButton onPress={() => handleAcceptFriendRequest(item.id, item.senderId)} haptic>
-                                                    <Text style={{color: themes.light.black, fontWeight: 'bold', fontSize: 14}}>ACCEPT</Text>
+                                                    <Text style={{color: themes.light.white, fontWeight: 'bold', fontSize: 14}}>ACCEPT</Text>
                                                 </PressableButton>
                                             </View>
                                             <View style={[styles.button, {backgroundColor: colors.decline}]}>
                                                 <PressableButton onPress={() => handleDeclineFriendRequest(item.id)} haptic>
-                                                    <Text style={{color: themes.light.black, fontWeight: 'bold', fontSize: 14}}>DECLINE</Text>
+                                                    <Text style={{color: themes.light.white, fontWeight: 'bold', fontSize: 14}}>DECLINE</Text>
                                                 </PressableButton>
                                             </View>
                                         </View>
@@ -562,7 +562,7 @@ const FriendsScreen = () => {
                                             }} 
                                             haptic
                                         >
-                                            <Text style={{color: themes.light.black, fontWeight: 'bold', fontSize: 14}}>REMOVE FRIEND</Text>
+                                            <Text style={{color: themes.light.white, fontWeight: 'bold', fontSize: 14}}>REMOVE FRIEND</Text>
                                         </PressableButton>
                                     </View>
                                     <View style={[styles.button, { backgroundColor: colors.secondary }]}>

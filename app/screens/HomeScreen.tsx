@@ -77,7 +77,7 @@ const SwipeableTask = ({
                 stiffness: 200,
                 });
             })
-            .failOffsetY([-10, 10])
+            // .failOffsetY([-10, 10])
             .simultaneousWithExternalGesture(scrollRef);
 
         const animatedStyle = useAnimatedStyle(() => ({
@@ -777,30 +777,30 @@ const HomeScreen = () => {
                         </GestureDetector>
                         
                         {/* Task Sorter */}
-                        {filteredTasks.length > 0 && (
-                            <View style={styles.sortContainer}>
-                                <Text style={[styles.sortLabel, { color: colors.black}]}>Sort By:</Text>
-                                <Picker
-                                    selectedValue={sortOption}
-                                    onValueChange={(itemValue) => setSortOption(itemValue)}
-                                    style={[styles.sortPicker, { color: colors.black}]}
-                                    mode="dropdown"
-                                    dropdownIconColor={colors.black}
-                                >
-                                    <Picker.Item label="Name" value="name" />
-                                    <Picker.Item label="Date" value="date" />
-                                    <Picker.Item label="Time Created (Oldest First)" value="createdAt" />
-                                    <Picker.Item label="Time Created (Newest First)" value="reverseCreatedAt" />
-                                </Picker>
-                                <TouchableOpacity onPress={() => setShowOnlyShared(!showOnlyShared)} style={styles.sharedToggle}>
-                                    <Text style={{ color: colors.black, fontSize: 16 }}>{showOnlyShared ? 'Show All Tasks' : 'Show Shared Only'}</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
+                        <View style={styles.sortContainer}>
+                            <Text style={[styles.sortLabel, { color: colors.black}]}>Sort By:</Text>
+                            <Picker
+                                selectedValue={sortOption}
+                                onValueChange={(itemValue) => setSortOption(itemValue)}
+                                style={[styles.sortPicker, { color: colors.black}]}
+                                mode="dropdown"
+                                dropdownIconColor={colors.black}
+                            >
+                                <Picker.Item label="Name" value="name" />
+                                <Picker.Item label="Date" value="date" />
+                                <Picker.Item label="Time Created (Oldest First)" value="createdAt" />
+                                <Picker.Item label="Time Created (Newest First)" value="reverseCreatedAt" />
+                            </Picker>
+                            <TouchableOpacity onPress={() => setShowOnlyShared(!showOnlyShared)} style={styles.sharedToggle}>
+                                <Text style={{ color: colors.black, fontSize: 16 }}>
+                                {showOnlyShared ? 'Show All Tasks' : 'Show Shared Only'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
 
                         {/* Task List */}
                         {Array.isArray(filteredTasks) && filteredTasks.length === 0 ? (
-                            <Text style={styles.noTasksText}>No tasks available</Text>
+                            <Text style={[styles.noTasksText, {color: colors.black}]}>{showOnlyShared ? 'No Shared Tasks Available' : 'No Tasks Available'}</Text>
                         ) : (
                             <NativeViewGestureHandler ref={scrollRef}>
                                 <FlatList
@@ -809,7 +809,7 @@ const HomeScreen = () => {
                                     keyboardShouldPersistTaps="handled"
                                     showsVerticalScrollIndicator
                                     keyExtractor={(item) => item.id}
-                                    style={{ flexGrow: 0 }}
+                                    style={{ flex: 1 }}
                                     contentContainerStyle={{ paddingBottom: 200, }}
                                     renderItem={({item}) => (
                                         <SwipeableTask 
