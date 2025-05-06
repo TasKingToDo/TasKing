@@ -8,6 +8,7 @@ import Slider from '@react-native-community/slider';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import { Bot, Pen, XCircle } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import Constants from 'expo-constants';
 
 import { themes } from '@/config/colors';
 import useTheme from '@/config/useTheme';
@@ -15,12 +16,11 @@ import { SettingsContext } from '@/config/SettingsContext';
 import CustomMenu from '@/config/customMenu';
 import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '@/config/authContext';
-import dotenv from 'dotenv';                             // for api key .env referencing 
-dotenv.config();                                          // load environment variables from the file 
 import PressableButton from '@/config/PressableButton';
 
 const { height } = Dimensions.get("window");
 const MID_POSITION = 0;
+const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey;
 
 const difficultyLevels = [
     { label: "Very Easy", xp: 5, balance: 5 },
@@ -211,7 +211,7 @@ const CreateTaskScreen = ({navigation}) => {
 
         setLoadingSubtasks(true);
         try {
-            const API_KEY = process.env.GEMINI_API_KEY;
+            const API_KEY = geminiApiKey;
             const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
             const prompt = `Please generate a sensible number of subtasks, less than or equal to 10, with no formatting (like markdown and others); for the main task: ${name}`;
     
@@ -290,7 +290,7 @@ const CreateTaskScreen = ({navigation}) => {
                                 <View style={styles.headerContainer}>
                                     <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30, backgroundColor: colors.secondary, borderRadius: 3 }}>
                                         <PressableButton onPress={handleBackPress} haptic style={styles.backButton}>
-                                            <Text style={{color: colors.black, fontWeight: 'bold', fontSize: 14}}>BACK</Text>
+                                            <Text style={{color: themes.light.white, fontWeight: 'bold', fontSize: 14}}>BACK</Text>
                                         </PressableButton>
                                     </View>
                                     <View style={{ flex: 1, alignItems: 'center' }}>

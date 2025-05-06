@@ -3,6 +3,7 @@ import { Text, View, StyleSheet, Platform, ActivityIndicator, ScrollView } from 
 import { doc, setDoc, onSnapshot} from "firebase/firestore";
 
 import useTheme from '@/config/useTheme';
+import { themes } from '@/config/colors';
 import { SettingsContext } from '@/config/SettingsContext';
 import { FIREBASE_DB } from '@/firebaseConfig';
 import { authContext } from '@/config/authContext';
@@ -116,7 +117,7 @@ const StatisticsScreen = ({ navigation }) => {
             <View style={styles.headerContainer}>
                 <View style={{ position: 'absolute', left: 15, top: Platform.OS === 'ios' ? 50 : 30, backgroundColor: colors.secondary, borderRadius: 3 }}>
                     <PressableButton onPress={() => navigation.goBack()} haptic style={styles.backButton}>
-                        <Text style={{color: colors.black, fontWeight: 'bold', fontSize: 14}}>BACK</Text>
+                        <Text style={{color: themes.light.white, fontWeight: 'bold', fontSize: 14}}>BACK</Text>
                     </PressableButton>
                 </View>
                 <View style={{ flex: 1, alignItems: 'center' }}>

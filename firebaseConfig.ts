@@ -5,11 +5,12 @@ import { initializeAuth, getAuth } from "firebase/auth";
 import { getReactNativePersistence } from '@firebase/auth/dist/rn/index.js';
 import { getFirestore } from "firebase/firestore";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-import dotenv from 'dotenv';    // import env 
-dotenv.config();               // config initialization, load vars from .env file
+import Constants from "expo-constants";
+
+const firebaseApiKey = Constants.expoConfig?.extra?.firebaseApiKey;
 
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
+  apiKey: firebaseApiKey,
   authDomain: "tasking-c1d66.firebaseapp.com",
   databaseURL: "https://tasking-c1d66-default-rtdb.firebaseio.com/",
   projectId: "tasking-c1d66",
