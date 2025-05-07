@@ -450,13 +450,13 @@ const HomeScreen = () => {
             if (taskData.collaboratorId) {
                 const bonusXp = Math.floor(taskXp * 0.3);
                 const bonusBalance = Math.floor(taskBalance * 0.3);
-
+        
                 const totalXp = taskXp + bonusXp;
                 const totalBalance = taskBalance + bonusBalance;
-
+        
                 const creatorRef = doc(FIREBASE_DB, "users", taskData.userId);
                 const collaboratorRef = doc(FIREBASE_DB, "users", taskData.collaboratorId);
-
+        
                 await Promise.all([
                     updateDoc(creatorRef, {
                         xp: increment(totalXp),
@@ -467,6 +467,11 @@ const HomeScreen = () => {
                         balance: increment(totalBalance),
                     }),
                 ]);
+            } else {
+                await updateDoc(userRef, {
+                    xp: newXp,
+                    balance: newBalance,
+                });
             }
     
             // Handle repeat task scheduling
