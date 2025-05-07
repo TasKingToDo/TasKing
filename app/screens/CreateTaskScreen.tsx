@@ -215,7 +215,7 @@ const CreateTaskScreen = ({navigation}) => {
             const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
             const prompt = `Please generate a sensible number of subtasks, less than or equal to 10, with no formatting (like markdown and others); for the main task: ${name}`;
     
-            const response = await fetch(`${BASE_URL}/models/gemini-1.5-pro-latest:generateContent?key=${API_KEY}`, {
+            const response = await fetch(`${BASE_URL}/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
