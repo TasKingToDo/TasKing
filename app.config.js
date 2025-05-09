@@ -1,7 +1,9 @@
 import 'dotenv/config';
 
 export default {
+  "owner": "jmitchell91902",
   expo: {
+	"owner": "jmitchell91902",
     name: "TasKing",
     slug: "TasKing",
     version: "1.0.0",
@@ -41,14 +43,14 @@ export default {
       typedRoutes: true
     },
     extra: {
+	  eas: {
+        projectId: "4647e131-2a00-4999-b70b-6a1cda4aa718"
+      },
       router: {
         origin: false
       },
       firebaseApiKey: process.env.FIREBASE_API_KEY,
       geminiApiKey: process.env.GEMINI_API_KEY
     },
-    eas: {
-      projectId: "4647e131-2a00-4999-b70b-6a1cda4aa718"
-    }
   }
 };

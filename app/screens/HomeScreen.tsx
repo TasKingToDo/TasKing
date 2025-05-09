@@ -77,7 +77,7 @@ const SwipeableTask = ({
                 stiffness: 200,
                 });
             })
-            // .failOffsetY([-10, 10])
+            //.failOffsetY([-5, 5])
             .simultaneousWithExternalGesture(scrollRef);
 
         const animatedStyle = useAnimatedStyle(() => ({
@@ -715,47 +715,43 @@ const HomeScreen = () => {
     };
     
     // Notification functions
-    const scheduleNotification = async (task: Task, presetHours: number) => {
-        const taskDueDate = new Date(`${task.date}T${task.time}`);
-        const triggerTime = new Date(taskDueDate.getTime() - presetHours * 60 * 60 * 1000);
-        
-        const now = Date.now();
-    
-        if (triggerTime.getTime() <= now) {
-            console.warn("Notification time is in the past. Cannot schedule.");
-            return;
+    const scheduleNotification = async (task: Task, notifyAt: Date) => {
+        const now = new Date();
+      
+        if (notifyAt.getTime() <= now.getTime()) {
+          console.warn("Notification time is in the past. Cannot schedule.");
+          return;
         }
-    
-        const delay = triggerTime.getTime() - now;
-    
+      
+        const delay = notifyAt.getTime() - now.getTime();
+      
         setTimeout(() => {
-            Toast.show({
-                type: 'info',
-                text1: "Upcoming Task Reminder",
-                text2: `${task.name} is due in ${presetHours} hour(s)!`,
-                position: 'top',
-                visibilityTime: 5000, // The banner will be visible for 5 seconds.
-            });
+          Toast.show({
+            type: 'info',
+            text1: "Upcoming Task Reminder",
+            text2: `${task.name} is due soon!`,
+            position: 'top',
+            visibilityTime: 5000,
+          });
         }, delay);
-    
-        // This doesn't really do much until I actually make notifications work work
+      
         await updateDoc(doc(FIREBASE_DB, "tasks", task.id), {
-            notificationPreset: presetHours,
+          notificationTime: notifyAt.toISOString(),
+        });
+      };
+    
+    
+    const handleNotificationPress = (taskId: string) => {
+        const task = allTasks.find(t => t.id === taskId);
+        if (!task) return;
+    
+        navigation.navigate('Notification', {
+            onSelect: async (notiHours: number) => {
+                await scheduleNotification(task, notiHours);
+            }
         });
     };
     
-    const handleNotificationPress = (taskId: string) => {
-        setSelectedTaskId(taskId);
-        setNotificationModalVisible(true);
-    };
-    
-    const handlePresetSelection = async (presetHours: number) => {
-        setNotificationModalVisible(false);
-        const task = allTasks.find(t => t.id === selectedTaskId);
-        if (task) {
-            await scheduleNotification(task, presetHours);
-        }
-    };
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
@@ -862,33 +858,7 @@ const HomeScreen = () => {
                         <PressableButton style={styles.createTask} onPress={() => navigation.navigate('Create Task')}>
                             <CirclePlus size={70} color={themes.light.black} strokeWidth={1.5} />
                         </PressableButton>
-                    </Animated.View>
-
-                    {/* Notification Preset Modal */}
-                    <Modal
-                        transparent={true}
-                        animationType="slide"
-                        visible={notificationModalVisible}
-                        onRequestClose={() => setNotificationModalVisible(false)}
-                    >
-                        <View style={styles.modalContainer}>
-                            <View style={styles.modalContent}>
-                                <Text style={styles.modalTitle}>Select Notification Preset</Text>
-                                <TouchableOpacity onPress={() => handlePresetSelection(1)} style={styles.presetButton}>
-                                    <Text style={styles.presetButtonText}>1 Hour Before</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => handlePresetSelection(2)} style={styles.presetButton}>
-                                    <Text style={styles.presetButtonText}>2 Hours Before</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => handlePresetSelection(24)} style={styles.presetButton}>
-                                    <Text style={styles.presetButtonText}>24 Hours Before</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => setNotificationModalVisible(false)} style={styles.cancelButton}>
-                                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </Modal>
+                    </Animated.View>             
                 </SafeAreaView>
             </SafeAreaProvider>
         </GestureHandlerRootView>
@@ -969,16 +939,24 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     modalContainer: {
-        flex: 1,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        right: 0,
         justifyContent: 'center',
+        alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.5)',
         padding: 20,
     },
     modalContent: {
+        width: 300,
+        height: 250,
         backgroundColor: 'white',
         borderRadius: 8,
         padding: 20,
-        alignItems: 'center'
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     modalTitle: {
         fontSize: 18,
