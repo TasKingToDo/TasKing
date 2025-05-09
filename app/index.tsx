@@ -13,6 +13,7 @@ import SettingsScreen from "./screens/SettingsScreen";
 import StatisticsScreen from "./screens/StatisticsScreen";
 import CreateTaskScreen from "./screens/CreateTaskScreen";
 import ForgotPassScreen from "./screens/ForgotPassScreen";
+import NotificationScreen from "./screens/NotificationScreen";
 import { SettingsProvider } from "@/config/SettingsContext";
 import { AuthProvider, authContext } from "@/config/authContext";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -39,6 +40,8 @@ const RootNavigator = () => {
           <Stack.Screen name="Stats" component={StatisticsScreen} options={{animation: 'fade'}} />
           <Stack.Screen name="Settings" component={SettingsScreen} options={{animation: 'fade'}} />
           <Stack.Screen name="ForgotPass" component={ForgotPassScreen} />
+          <Stack.Screen name="Notification" component={NotificationScreen} />
+
         </>
       ) : (
         <>
