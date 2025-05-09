@@ -17,7 +17,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./app/assets/imgs/logo_large.png",
+        foregroundImage: "./app/assets/imgs/logo_small.png",
         backgroundColor: "#ffffff"
       },
       package: "com.anonymous.TasKing"
@@ -25,7 +25,7 @@ export default {
     web: {
       bundler: "metro",
       output: "static",
-      favicon: "./app/assets/imgs/logo_large.png"
+      favicon: "./app/assets/imgs/logo_small.png"
     },
     plugins: [
       "expo-router",
